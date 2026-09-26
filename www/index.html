@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="target-densitydpi=device-dpi, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fasti Thum</title>
+<meta name="theme-color" content="#2a5298">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700;900&family=Hind+Siliguri:wght@400;700&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Tahoma,sans-serif; }
+  html, body { margin:0; padding:0; overflow:hidden; height:100vh; width:100vw; position: fixed; }
+  .app-container { display:grid; grid-template-rows:auto 1fr; height:100vh; width:100vw; overflow:hidden; }
+  .editor-wrap { background:#f4f6f9; padding:6px 0 4px; box-shadow:0 4px 12px rgba(0,0,0,0.08); z-index:100; position:relative; overflow:hidden; width:100%; }
+  .editor { width:100%; max-width:100%; margin:0; padding:0 4px; display:flex; flex-direction:column; gap:6px; box-sizing:border-box; }
+  .canvas-wrap { background:#fff; padding:6px; border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.08); display:flex; justify-content:center; align-items:center; width:100%; box-sizing:border-box; position: relative; overflow: hidden; }
+  canvas { width:100%; max-width:100%; height:auto; aspect-ratio:16/9; border-radius:8px; background:#222; cursor:pointer; touch-action:none; display:block; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  #hiddenInput { position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: none; outline: none; background: transparent; color: transparent; caret-color: transparent; font-size: 16px; resize: none; overflow: hidden; }
+  .floating-menu { position: absolute; display: none; background: #1e1e1e; border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.55); padding: 6px; z-index: 500; transform: translate(-50%, -100%); gap: 4px; border: 1px solid #333; animation: popIn 0.15s ease-out; }
+  .floating-menu.show { display: flex; }
+  @keyframes popIn { from { transform: translate(-50%, -100%) scale(0.85); opacity: 0; } to { transform: translate(-50%, -100%) scale(1); opacity: 1; } }
+  .floating-menu button { background: transparent; color: #fff; border: none; padding: 10px 14px; font-size: 13px; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: background 0.15s; font-family: 'Noto Sans Bengali', 'Noto Sans KR', 'Segoe UI', sans-serif; }
+  .floating-menu button:hover { background: #333; }
+  .floating-menu button.edit-btn { color: #38ef7d; }
+  .floating-menu button.color-btn { color: #4fc3f7; }
+  .floating-menu button.delete-btn { color: #ff4757; }
+  .color-popup { position: absolute; display: none; background: transparent; border: none; box-shadow: none; padding: 0; z-index: 520; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: auto; }
+  .color-popup.show { display: block; }
+  .color-strip { display: flex; flex-direction: column; gap: 5px; padding: 4px 2px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; scrollbar-width: none; -ms-overflow-style: none; align-items: center; height: 280px; width: 42px; background: transparent; }
+  .color-strip::-webkit-scrollbar { display: none; }
+  .color-strip-item { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255,255,255,0.55); flex-shrink: 0; padding: 0; transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s; -webkit-tap-highlight-color: transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.45); }
+  .color-strip-item:hover { transform: scale(1.15); border-color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.6); }
+  .color-strip-item:active { transform: scale(0.92); }
+  .color-strip-item.active { border-color: #38ef7d; border-width: 3px; box-shadow: 0 0 0 3px rgba(56,239,125,0.6), 0 3px 10px rgba(0,0,0,0.6); }
+  #saveToast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(120px); background: rgba(20, 20, 20, 0.95); color: #fff; padding: 12px 22px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 10000; box-shadow: 0 8px 24px rgba(0,0,0,0.4); transition: transform 0.35s cubic-bezier(.2,.9,.3,1.4), opacity 0.3s; opacity: 0; pointer-events: none; max-width: 88%; text-align: center; display: flex; align-items: center; gap: 8px; font-family: 'Noto Sans Bengali', 'Noto Sans KR', 'Segoe UI', sans-serif; }
+  #saveToast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  #saveToast.success { background: linear-gradient(135deg,#11998e,#38ef7d); }
+  #saveToast.error   { background: linear-gradient(135deg,#c62828,#e53935); }
+  #saveToast.info    { background: linear-gradient(135deg,#1565c0,#2a5298); }
+  .controls { background:#fff; padding:6px 8px; border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:space-between; gap:6px; overflow-x:auto; scrollbar-width:none; width:100%; box-sizing:border-box; }
+  .controls::-webkit-scrollbar { display:none; }
+  .btn { padding:7px 10px; border:none; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.3s ease; flex-shrink:0; display:flex; align-items:center; gap:4px; white-space:nowrap; }
+  .btn-success { background:linear-gradient(135deg,#11998e,#38ef7d); color:#fff; }
+  .btn-success:hover { box-shadow:0 4px 12px rgba(56,239,125,0.4); }
+  .btn-share { background:linear-gradient(135deg,#7b2ff7,#f107a3); color:#fff; }
+  .btn-share:hover { box-shadow:0 4px 12px rgba(123,47,247,0.4); }
+  .btn-undo { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; }
+  .btn-undo:hover { box-shadow:0 4px 12px rgba(245,158,11,0.4); }
+  .btn-undo:disabled { opacity:0.4; cursor:not-allowed; box-shadow:none; }
+  .btn:disabled { opacity:0.6; cursor:not-allowed; }
+  #logoUpload { display: none; }
+  .scroll-area { overflow-y:auto; overflow-x:hidden; background:#f4f6f9; padding-bottom:20px; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:#2a5298 #f0f0f0; }
+  .scroll-area::-webkit-scrollbar { width:8px; }
+  .scroll-area::-webkit-scrollbar-track { background:#f0f0f0; }
+  .scroll-area::-webkit-scrollbar-thumb { background:#2a5298; border-radius:4px; }
+  .thumbnail-gallery { width:100%; margin:0; padding:0 6px; box-sizing:border-box; }
+  .filter-tabs { display: flex; gap: 6px; padding: 10px 4px; flex-wrap: wrap; position: sticky; top: 0; z-index: 60; background: #f4f6f9; box-shadow: 0 4px 8px rgba(0,0,0,0.04); }
+  .filter-btn { background: #e2e8f0; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; color: #475569; transition: all 0.2s; white-space: nowrap; }
+  .filter-btn.active { background: #2a5298; color: #fff; }
+  .icon-upload-btn { background: linear-gradient(135deg,#11998e,#38ef7d); color: #fff; padding: 7px 10px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; transition: box-shadow 0.3s ease; -webkit-tap-highlight-color: transparent; }
+  .icon-upload-btn:hover { box-shadow: 0 4px 12px rgba(56,239,125,0.4); }
+  #bulkThumbInput { display:none; }
+  .gallery-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; padding:6px; background:#fff; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.06); margin-bottom:20px; width:100%; box-sizing:border-box; }
+  .thumb-card { background:#f9fafc; border-radius:8px; padding:6px; text-align:center; box-shadow:0 2px 5px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.25s ease; border:2px solid transparent; position:relative; width:100%; min-width:0; overflow:hidden; box-sizing:border-box; }
+  .thumb-card:hover { transform:translateY(-3px); border-color:#2a5298; }
+  .thumb-preview { width:100%; aspect-ratio:16/9; border-radius:5px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; font-weight:bold; text-shadow:0 1px 3px rgba(0,0,0,0.8); margin-bottom:5px; background-size:cover; background-position:center; background-color:#333; position:relative; overflow:hidden; }
+  .card-logo-badge { position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:4px; background:rgba(255,255,255,0.9); background-size:cover; background-position:center; display:none; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+  .thumb-card.has-logo .card-logo-badge { display:block; }
+  .thumb-name { font-size:11px; font-weight:600; color:#444; padding:2px 0; }
+  .color-name-row { display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px; flex-wrap: nowrap; }
+  .color-preview-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px #cbd5e1, 0 1px 2px rgba(0,0,0,0.2); flex-shrink: 0; }
+  .color-name-text { font-size: 10px; font-weight: 700; color: #1e2a3a; font-family: 'Courier New', monospace; letter-spacing: 0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .card-delete-btn { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: rgba(220, 38, 38, 0.9); color: #fff; border: none; display: none; align-items: center; justify-content: center; font-size: 10px; cursor: pointer; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.35); padding: 0; }
+  .thumb-card[data-custom="true"] .card-delete-btn { display: flex; }
+  .card-delete-btn:active { transform: scale(0.9); }
+  .bottom-options { width:100%; margin:16px auto 0; padding:0 6px; box-sizing:border-box; }
+  .options-row { background:#fff; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:space-between; padding:8px 10px; gap:8px; }
+  .option-card { display:flex; align-items:center; justify-content:center; gap:5px; padding:8px 10px; border-radius:8px; background:#f4f6f9; color:#333; font-size:10px; font-weight:700; cursor:pointer; border:none; flex:1; white-space:nowrap; transition:all 0.2s ease; }
+  .option-card:hover { transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+  .option-card i { font-size:14px; }
+  .option-card.facebook { color:#1877f2; }
+  .option-card.youtube { color:#ff0000; }
+  .option-card.instagram { color:#e1306c; }
+  .option-card.logo { background:linear-gradient(135deg,#7b2ff7,#f107a3); color:#fff; }
+  #colorPickerModal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+  #colorPickerModal.open { display: flex; }
+  .cp-box { width: 100%; max-width: 360px; background: #ffffff; border-radius: 16px; padding: 18px 18px 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.4); animation: cpPop 0.18s ease-out; }
+  @keyframes cpPop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .cp-title { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .cp-title .cp-close { background: transparent; border: none; font-size: 18px; color: #888; cursor: pointer; padding: 4px; }
+  .cp-label { font-size: 12px; font-weight: 700; color: #444; margin-bottom: 6px; display: block; }
+  .cp-slider-wrap { margin-bottom: 14px; }
+  .cp-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 24px; border-radius: 6px; outline: none; cursor: pointer; border: 1px solid #ddd; }
+  .cp-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 3px solid #2a5298; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+  .cp-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 3px solid #2a5298; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+  #cpHue { background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%); }
+  #cpSat { background: linear-gradient(to right, #ffffff, #ff0000); }
+  #cpVal { background: linear-gradient(to right, #000000, #ffffff); }
+  .cp-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; gap: 10px; }
+  .cp-preview-wrap { display: flex; align-items: center; gap: 10px; }
+  .cp-preview-box { width: 44px; height: 44px; border-radius: 8px; border: 2px solid #ddd; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
+  .cp-hex { font-size: 13px; font-weight: 700; color: #333; font-family: monospace; letter-spacing: 0.5px; }
+  .cp-actions { display: flex; gap: 8px; }
+  .cp-btn { padding: 9px 16px; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px; }
+  .cp-btn.cancel { background: #eef1f5; color: #555; }
+  .cp-btn.cancel:hover { background: #e2e6ec; }
+  .cp-btn.set { background: linear-gradient(135deg,#11998e,#38ef7d); color: #fff; }
+  .cp-btn.set:hover { box-shadow: 0 4px 12px rgba(56,239,125,0.4); }
+  #saveOptionsModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 9998; justify-content: center; align-items: flex-end; }
+  #saveOptionsModal.open { display: flex; }
+  .so-sheet { width: 100%; max-width: 520px; background: #ffffff; border-radius: 20px 20px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px)); box-shadow: 0 -8px 40px rgba(0,0,0,0.35); animation: soSlideUp 0.28s cubic-bezier(.2,.9,.3,1.05); }
+  @keyframes soSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .so-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .so-title { font-size: 18px; font-weight: 800; color: #1e2a3a; display: flex; align-items: center; gap: 10px; font-family: 'Noto Sans Bengali', 'Noto Sans KR', 'Segoe UI', sans-serif; }
+  .so-title i { color: #11998e; background: linear-gradient(135deg,#11998e,#38ef7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 20px; }
+  .so-close { background: #f0f3f7; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 16px; color: #667; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .so-close:hover { background: #e2e8f0; }
+  .so-option { display: flex; align-items: center; justify-content: space-between; background: #f4f6f9; border: 2px solid #f4f6f9; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
+  .so-option:hover { background: #eef1f6; }
+  .so-option.active { background: #e9fbf3; border-color: #38ef7d; }
+  .so-option-left { display: flex; flex-direction: column; gap: 2px; }
+  .so-option-name { font-size: 15px; font-weight: 800; color: #1e2a3a; letter-spacing: 0.4px; }
+  .so-option-desc { font-size: 12px; color: #667085; font-weight: 500; }
+  .so-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #fff; transition: all 0.2s; }
+  .so-option.active .so-check { border-color: #11998e; background: linear-gradient(135deg,#11998e,#38ef7d); }
+  .so-check i { color: #fff; font-size: 11px; opacity: 0; transition: opacity 0.15s; }
+  .so-option.active .so-check i { opacity: 1; }
+  .so-quality-wrap { margin-top: 16px; margin-bottom: 6px; transition: opacity 0.2s; }
+  .so-quality-wrap.hidden { opacity: 0.4; pointer-events: none; }
+  .so-quality-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .so-quality-label { font-size: 13px; font-weight: 700; color: #1e2a3a; }
+  .so-quality-value { font-size: 13px; font-weight: 800; color: #11998e; }
+  .so-quality-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; border-radius: 4px; background: linear-gradient(to right, #38ef7d 0%, #38ef7d 92%, #e2e8f0 92%, #e2e8f0 100%); outline: none; cursor: pointer; }
+  .so-quality-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 4px solid #38ef7d; cursor: pointer; box-shadow: 0 2px 8px rgba(56,239,125,0.45); }
+  .so-quality-slider::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 4px solid #38ef7d; cursor: pointer; box-shadow: 0 2px 8px rgba(56,239,125,0.45); }
+  .so-save-now { width: 100%; margin-top: 20px; padding: 16px; border: none; border-radius: 14px; background: linear-gradient(135deg,#11998e,#38ef7d); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 8px 20px rgba(56,239,125,0.35); transition: transform 0.15s, box-shadow 0.2s; font-family: 'Noto Sans Bengali', 'Noto Sans KR', 'Segoe UI', sans-serif; }
+  .so-save-now:active { transform: scale(0.98); }
+  .so-save-now:disabled { opacity: 0.7; cursor: not-allowed; }
+  .so-save-now i { font-size: 18px; }
+</style>
+</head>
+<body>
+
+  <div class="app-container">
+    <div class="editor-wrap">
+      <main class="editor">
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="canvas" width="1280" height="720" tabindex="0"></canvas>
+          <div class="floating-menu" id="floatingMenu">
+            <button class="edit-btn" id="menuEditBtn"><i class="fas fa-pen"></i> Edit</button>
+            <button class="color-btn" id="menuColorBtn"><i class="fas fa-palette"></i> Color</button>
+            <button class="delete-btn" id="menuDeleteBtn"><i class="fas fa-trash"></i> Delete</button>
+          </div>
+          <div class="color-popup" id="colorPopup"><div class="color-strip" id="colorStrip"></div></div>
+          <textarea id="hiddenInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" rows="1"></textarea>
+        </div>
+        <aside class="controls">
+          <button class="btn btn-success" id="downloadBtn" title="Save"><i class="fas fa-download"></i></button>
+          <button class="btn btn-share" id="shareBtn" title="Share"><i class="fas fa-share-alt"></i></button>
+          <button class="btn btn-undo" id="undoBtn" title="Undo" disabled><i class="fas fa-rotate-left"></i></button>
+          <label for="bulkThumbInput" class="icon-upload-btn" title="Add Photos"><i class="fas fa-images"></i></label>
+          <button class="btn btn-danger" id="resetBtn" title="Reset" style="display:flex; background:#f1f3f7; color:#d33;"><i class="fas fa-rotate-left"></i></button>
+        </aside>
+      </main>
+    </div>
+
+    <div class="scroll-area" id="scrollArea">
+      <section class="thumbnail-gallery">
+        <div class="filter-tabs">
+          <button class="filter-btn active" data-filter="all">All (<span id="countAll">0</span>)</button>
+          <button class="filter-btn" data-filter="image">Nature (<span id="countImage">0</span>)</button>
+          <button class="filter-btn" data-filter="color">Colors (<span id="countColor">0</span>)</button>
+          <button class="filter-btn" data-filter="custom">My Photos (<span id="countCustom">0</span>)</button>
+        </div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+      </section>
+      <section class="bottom-options">
+        <div class="options-row">
+          <button class="option-card facebook" data-size="facebook-cover"><i class="fab fa-facebook-f"></i><span>COVER</span></button>
+          <button class="option-card youtube" data-size="youtube-thumb"><i class="fab fa-youtube"></i><span>THUMB</span></button>
+          <button class="option-card logo" data-size="square-logo"><i class="fas fa-palette"></i><span>SQUARE</span></button>
+          <button class="option-card instagram" data-size="insta-post"><i class="fab fa-instagram"></i><span>POST</span></button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <input type="file" id="logoUpload" accept="image/*">
+  <input type="file" id="bulkThumbInput" accept="image/*" multiple>
+
+  <div id="colorPickerModal">
+    <div class="cp-box" onclick="event.stopPropagation();">
+      <div class="cp-title"><span>Select color</span><button class="cp-close" id="cpCloseBtn"><i class="fas fa-times"></i></button></div>
+      <div class="cp-slider-wrap"><label class="cp-label">Hue</label><input type="range" id="cpHue" class="cp-slider" min="0" max="360" value="0"></div>
+      <div class="cp-slider-wrap"><label class="cp-label">Saturation</label><input type="range" id="cpSat" class="cp-slider" min="0" max="100" value="0"></div>
+      <div class="cp-slider-wrap"><label class="cp-label">Value</label><input type="range" id="cpVal" class="cp-slider" min="0" max="100" value="100"></div>
+      <div class="cp-bottom">
+        <div class="cp-preview-wrap"><div class="cp-preview-box" id="cpPreview" style="background:#ffffff;"></div><span class="cp-hex" id="cpHex">#FFFFFF</span></div>
+        <div class="cp-actions"><button class="cp-btn cancel" id="cpCancelBtn">CANCEL</button><button class="cp-btn set" id="cpSetBtn">SET</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="saveOptionsModal">
+    <div class="so-sheet" onclick="event.stopPropagation();">
+      <div class="so-header"><div class="so-title"><i class="fas fa-floppy-disk"></i> Save Options</div><button class="so-close" id="soCloseBtn"><i class="fas fa-times"></i></button></div>
+      <div class="so-option active" data-format="png"><div class="so-option-left"><div class="so-option-name">PNG</div><div class="so-option-desc">Best quality</div></div><div class="so-check"><i class="fas fa-check"></i></div></div>
+      <div class="so-option" data-format="jpeg"><div class="so-option-left"><div class="so-option-name">JPEG</div><div class="so-option-desc">Small size</div></div><div class="so-check"><i class="fas fa-check"></i></div></div>
+      <div class="so-option" data-format="webp"><div class="so-option-left"><div class="so-option-name">WebP</div><div class="so-option-desc">Modern</div></div><div class="so-check"><i class="fas fa-check"></i></div></div>
+      <div class="so-quality-wrap hidden" id="soQualityWrap"><div class="so-quality-head"><span class="so-quality-label">Quality</span><span class="so-quality-value" id="soQualityValue">92%</span></div><input type="range" class="so-quality-slider" id="soQualitySlider" min="10" max="100" value="92"></div>
+      <button class="so-save-now" id="soSaveNowBtn"><i class="fas fa-download"></i> Save Now</button>
+    </div>
+  </div>
+
+  <div id="saveToast"><i class="fas fa-check-circle"></i><span id="saveToastText">সেভ হয়েছে</span></div>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const canvasWrap = document.getElementById('canvasWrap');
+  const saveToast = document.getElementById('saveToast');
+  const saveToastText = document.getElementById('saveToastText');
+  const hiddenInput = document.getElementById('hiddenInput');
+  const floatingMenu = document.getElementById('floatingMenu');
+  const menuEditBtn = document.getElementById('menuEditBtn');
+  const menuColorBtn = document.getElementById('menuColorBtn');
+  const menuDeleteBtn = document.getElementById('menuDeleteBtn');
+  const colorPopup = document.getElementById('colorPopup');
+  const colorStrip = document.getElementById('colorStrip');
+
+  const FONT_STACK = `'Noto Sans Bengali', 'Noto Sans KR', 'Hind Siliguri', 'Segoe UI', 'Nirmala UI', Arial, sans-serif`;
+  const SETTINGS_KEY = 'fastiThum_settings_v29';
+  const USERCARDS_KEY = 'fastiThum_userCards_v29';
+
+  const undoBtn = document.getElementById('undoBtn');
+  const MAX_UNDO_STEPS = 30;
+  let undoStack = [];
+  let isRestoringUndo = false;
+
+  function captureSnapshot() {
+    return {
+      bgImage: bgImage ? bgImage.src : null, bgColor: bgColor,
+      bgGradient: bgGradient ? JSON.parse(JSON.stringify(bgGradient)) : null,
+      textColor: textColor, FB_NAME: FB_NAME, FB_NAME_VISIBLE: FB_NAME_VISIBLE,
+      FB_NAME_COLOR: FB_NAME_COLOR, fbNameOffsetX: fbNameOffsetX, fbNameOffsetY: fbNameOffsetY,
+      logoX: logoX, logoY: logoY, LOGO_SIZE: LOGO_SIZE, logoPlaceholderVisible: logoPlaceholderVisible,
+      logoImage: logoImage ? logoImage.src : null,
+      canvasWidth: canvas.width, canvasHeight: canvas.height,
+      texts: JSON.parse(JSON.stringify(texts))
+    };
+  }
+
+  async function applySnapshot(snap) {
+    if (!snap) return;
+    isRestoringUndo = true;
+    try {
+      bgColor = snap.bgColor;
+      bgGradient = snap.bgGradient ? JSON.parse(JSON.stringify(snap.bgGradient)) : null;
+      textColor = snap.textColor; FB_NAME = snap.FB_NAME; FB_NAME_VISIBLE = snap.FB_NAME_VISIBLE;
+      FB_NAME_COLOR = snap.FB_NAME_COLOR; fbNameOffsetX = snap.fbNameOffsetX; fbNameOffsetY = snap.fbNameOffsetY;
+      logoX = snap.logoX; logoY = snap.logoY; LOGO_SIZE = snap.LOGO_SIZE; logoPlaceholderVisible = snap.logoPlaceholderVisible;
+      texts = JSON.parse(JSON.stringify(snap.texts));
+      canvas.width = snap.canvasWidth; canvas.height = snap.canvasHeight;
+      if (snap.bgImage) {
+        await new Promise((resolve) => { const img = new Image(); img.crossOrigin = 'anonymous';
+          img.onload = () => { bgImage = img; resolve(); }; img.onerror = () => { bgImage = null; resolve(); }; img.src = snap.bgImage; });
+      } else bgImage = null;
+      if (snap.logoImage) {
+        await new Promise((resolve) => { const img = new Image();
+          img.onload = () => { logoImage = img; resolve(); }; img.onerror = () => { logoImage = null; resolve(); }; img.src = snap.logoImage; });
+      } else logoImage = null;
+      selectedIdx = null; editingIdx = null; editingFbName = false; draw(); saveSettings();
+    } finally { isRestoringUndo = false; }
+  }
+
+  let lastSnapshotTime = 0;
+  function pushUndo(force) {
+    if (isRestoringUndo) return;
+    const now = Date.now();
+    if (!force && now - lastSnapshotTime < 80) return;
+    lastSnapshotTime = now;
+    undoStack.push(captureSnapshot());
+    if (undoStack.length > MAX_UNDO_STEPS) undoStack.shift();
+    updateUndoBtn();
+  }
+  function updateUndoBtn() { undoBtn.disabled = undoStack.length === 0; }
+  async function doUndo() {
+    if (undoStack.length === 0) { showToast('Undo করার কিছু নেই', 'info', 1200); return; }
+    const snap = undoStack.pop(); await applySnapshot(snap); updateUndoBtn(); showToast('↶ Undo হয়েছে', 'info', 1200);
+  }
+  undoBtn.addEventListener('click', doUndo);
+
+  const DB_NAME = 'FastiThumDB'; const DB_VERSION = 1; const STORE_PHOTOS = 'userPhotos';
+  let dbPromise = null;
+  function openDB() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve, reject) => {
+      if (!window.indexedDB) { reject(new Error('IndexedDB not supported')); return; }
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => { const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_PHOTOS)) db.createObjectStore(STORE_PHOTOS, { keyPath: 'id', autoIncrement: true }); };
+      req.onsuccess = (e) => resolve(e.target.result); req.onerror = (e) => reject(e.target.error);
+    });
+    return dbPromise;
+  }
+  async function addPhotoToDB(photo) {
+    try { const db = await openDB();
+      return await new Promise((res, rej) => { const tx = db.transaction(STORE_PHOTOS, 'readwrite');
+        const req = tx.objectStore(STORE_PHOTOS).add({ imgDataUrl: photo.imgDataUrl, text: photo.text, sub: photo.sub });
+        req.onsuccess = () => res(req.result); req.onerror = (e) => rej(e.target.error); });
+    } catch (e) { console.warn('addPhotoToDB failed', e); return null; }
+  }
+  async function deletePhotoFromDB(id) {
+    if (!id) return;
+    try { const db = await openDB();
+      await new Promise((res, rej) => { const tx = db.transaction(STORE_PHOTOS, 'readwrite');
+        const req = tx.objectStore(STORE_PHOTOS).delete(id);
+        req.onsuccess = () => res(); req.onerror = (e) => rej(e.target.error); });
+    } catch (e) { console.warn('deletePhotoFromDB failed', e); }
+  }
+  async function clearUserPhotosDB() {
+    try { const db = await openDB();
+      await new Promise((res, rej) => { const tx = db.transaction(STORE_PHOTOS, 'readwrite');
+        tx.objectStore(STORE_PHOTOS).clear(); tx.oncomplete = () => res(); tx.onerror = (e) => rej(e.target.error); });
+    } catch (e) { console.warn('IndexedDB clear failed', e); }
+  }
+  function makeThumbnail(dataUrl, maxW, maxH, quality) {
+    return new Promise((resolve) => { const img = new Image();
+      img.onload = () => { const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+        const w = Math.round(img.width * ratio); const h = Math.round(img.height * ratio);
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const cctx = c.getContext('2d'); cctx.drawImage(img, 0, 0, w, h);
+        try { resolve(c.toDataURL('image/jpeg', quality || 0.7)); } catch(e) { resolve(dataUrl); } };
+      img.onerror = () => resolve(dataUrl); img.src = dataUrl; });
+  }
+
+  /* ============================================================
+     ✅ FIX #1: Save to Gallery — নতুন প্লাগইন ব্যবহার
+     ============================================================ */
+  function ensureAndroidPermissions() {
+    return new Promise((resolve) => {
+      if (!window.cordova) { resolve(false); return; }
+      const perms = window.cordova.plugins && window.cordova.plugins.permissions;
+      if (!perms) { resolve(true); return; }
+      const list = [];
+      if (perms.WRITE_EXTERNAL_STORAGE) list.push(perms.WRITE_EXTERNAL_STORAGE);
+      if (perms.READ_EXTERNAL_STORAGE) list.push(perms.READ_EXTERNAL_STORAGE);
+      perms.requestPermissions(list, () => resolve(true), () => resolve(false));
+    });
+  }
+
+  /* ✅ নতুন প্লাগইন: @tanyijia/cordova-save-image-gallery */
+  function saveWithImageSaver(blob) {
+    return new Promise((resolve, reject) => {
+      if (!window.imageSaver || !window.imageSaver.saveBase64Image) {
+        reject(new Error('save-image-gallery plugin not available')); return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = reader.result.split(',')[1];
+        const params = {
+          data: base64Data,
+          prefix: 'FastiThum_',
+          format: 'JPG',
+          quality: 100,
+          mediaScanner: true
+        };
+        window.imageSaver.saveBase64Image(params,
+          (filePath) => resolve({ where: 'gallery', path: filePath }),
+          (err) => reject(new Error('saveBase64Image failed: ' + err))
+        );
+      };
+      reader.onerror = () => reject(new Error('FileReader failed'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  /* ✅ MediaScanner fallback (যদি ইনস্টল থাকে) */
+  function scanMediaFile(filePath) {
+    return new Promise((resolve) => {
+      try {
+        const ms = window.MediaScanner
+                || (window.cordova && window.cordova.plugins && window.cordova.plugins.MediaScanner)
+                || window.mediascanner;
+        if (ms && typeof ms.scan === 'function') {
+          ms.scan(filePath, () => resolve(true), () => resolve(false));
+        } else resolve(false);
+      } catch (e) { resolve(false); }
+    });
+  }
+
+  /* ✅ Cordova File fallback */
+  function saveWithCordovaFile(blob, fileName) {
+    return new Promise((resolve, reject) => {
+      if (!window.resolveLocalFileSystemURL || !window.cordova || !window.cordova.file) {
+        reject(new Error('Cordova File plugin not available')); return;
+      }
+      const candidates = [];
+      if (cordova.file.externalRootDirectory)
+        candidates.push({ root: cordova.file.externalRootDirectory, sub: ['Pictures', 'FastiThum'] });
+      if (cordova.file.externalDataDirectory)
+        candidates.push({ root: cordova.file.externalDataDirectory, sub: ['FastiThum'] });
+      if (cordova.file.dataDirectory)
+        candidates.push({ root: cordova.file.dataDirectory, sub: ['FastiThum'] });
+      if (!candidates.length) { reject(new Error('No writable directory')); return; }
+
+      let idx = 0;
+      const tryNext = () => {
+        if (idx >= candidates.length) { reject(new Error('All directories failed')); return; }
+        const { root, sub } = candidates[idx++];
+        window.resolveLocalFileSystemURL(root, (rootEntry) => {
+          const walk = (parent, i) => {
+            if (i >= sub.length) { writeFile(parent); return; }
+            parent.getDirectory(sub[i], { create: true }, (d) => walk(d, i + 1), () => tryNext());
+          };
+          const writeFile = (dir) => {
+            dir.getFile(fileName, { create: true }, (fileEntry) => {
+              fileEntry.createWriter((writer) => {
+                writer.onwriteend = async () => {
+                  const path = fileEntry.toURL();
+                  await scanMediaFile(path);
+                  resolve({ where: 'gallery', path });
+                };
+                writer.onerror = () => tryNext();
+                writer.write(blob);
+              }, () => tryNext());
+            }, () => tryNext());
+          };
+          walk(rootEntry, 0);
+        }, () => tryNext());
+      };
+      tryNext();
+    });
+  }
+
+  async function saveImage(blob, fileName) {
+    await ensureAndroidPermissions();
+
+    // ১. নতুন প্লাগইন (সবচেয়ে ভালো)
+    try {
+      const r = await saveWithImageSaver(blob);
+      return { ok: true, where: r.where };
+    } catch (e) { console.warn('imageSaver failed:', e.message); }
+
+    // ২. Cordova File fallback
+    try {
+      const r = await saveWithCordovaFile(blob, fileName);
+      return { ok: true, where: r.where };
+    } catch (e) { console.warn('Cordova File failed:', e.message); }
+
+    // ৩. Browser download (desktop টেস্টের জন্য)
+    try {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = fileName; link.href = url;
+      document.body.appendChild(link); link.click();
+      setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 1500);
+      return { ok: true, where: 'browser' };
+    } catch (e) { return { ok: false, err: e.message }; }
+  }
+
+  let toastTimer = null;
+  function showToast(msg, type = 'success', duration = 2200) {
+    saveToastText.textContent = msg; saveToast.className = 'show ' + type;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { saveToast.classList.remove('show'); }, duration);
+  }
+
+  const COLOR_PALETTE = [
+    '#ffffff', '#000000', '#e53935', '#d32f2f', '#c62828', '#b71c1c',
+    '#ff5252', '#ff1744', '#ff2d55', '#dc2626', '#991b1b', '#e91e63',
+    '#d81b60', '#c2185b', '#ec407a', '#f06292', '#ff4081', '#f50057',
+    '#e1306c', '#ff6bcb', '#ad1457', '#9c27b0', '#8e24aa', '#7b1fa2',
+    '#6a1b9a', '#4a148c', '#7b2ff7', '#9f4fff', '#ab47bc', '#ba68c8',
+    '#673ab7', '#2196f3', '#1976d2', '#1565c0', '#0d47a1', '#1877f2',
+    '#3b5998', '#42a5f5', '#0ea5e9', '#0288d1', '#174ea6', '#00bcd4',
+    '#0097a7', '#00838f', '#006064', '#26a69a', '#00897b', '#00796b',
+    '#00c7be', '#00acc1', '#11998e', '#4caf50', '#43a047', '#388e3c',
+    '#2e7d32', '#1b5e20', '#66bb6a', '#16a34a', '#0d7a37', '#22c55e',
+    '#34c759', '#ffeb3b', '#fdd835', '#fbc02d', '#f9a825', '#f57f17',
+    '#ffb800', '#f59e0b', '#ffc107', '#ffd600', '#fbbf24', '#ff9800',
+    '#fb8c00', '#f57c00', '#ef6c00', '#e65100', '#ff5722', '#f4511e',
+    '#ff7043', '#ea580c', '#f97316', '#a0522d', '#8b4513', '#654321',
+    '#d2691e', '#cd853f', '#deb887', '#d2b48c', '#f5deb3', '#ffdead',
+    '#808080', '#a9a9a9', '#c0c0c0', '#d3d3d3', '#e0e0e0', '#f5f5f5'
+  ];
+
+  const FACEBOOK_GRADIENTS = [
+    { colors: ['#e0c3fc', '#f5e6ff', '#a1c4fd', '#c2e9fb', '#fdd6e6'], angle: 120, name: 'Purple Wave' },
+    { colors: ['#4a7fb5', '#6d9dc5', '#95b9d4', '#b8cfe0'], angle: 180, name: 'Blue Sky Cloud' },
+    { colors: ['#f5c9a8', '#e8b4c4', '#c8a8d8', '#a8b8d0', '#d8b8c0'], angle: 135, name: 'Flowers Dream' },
+    { colors: ['#fdd6e6', '#e6d5f5', '#d5e5ff', '#b8d0f0', '#ffd6e8'], angle: 45, name: 'Pastel Bubbles' },
+    { colors: ['#0a0e2a', '#1a2352', '#2a3565', '#0d1a3a'], angle: 180, name: 'Night Dunes' }
+  ];
+
+  const REGULAR_GRADIENTS = [
+    { colors: ['#ff6b6b', '#ee5a24'], angle: 135, name: 'Sunset' },
+    { colors: ['#feca57', '#ff9ff3'], angle: 135, name: 'Peach' },
+    { colors: ['#48dbfb', '#0abde3'], angle: 135, name: 'Ocean' },
+    { colors: ['#1dd1a1', '#10ac84'], angle: 135, name: 'Mint' },
+    { colors: ['#5f27cd', '#341f97'], angle: 135, name: 'Purple' },
+    { colors: ['#ee5253', '#ff6b6b'], angle: 135, name: 'Red' },
+    { colors: ['#00d2d3', '#01a3a4'], angle: 135, name: 'Teal' },
+    { colors: ['#c8d6e5', '#8395a7'], angle: 135, name: 'Silver' },
+    { colors: ['#576574', '#222f3e'], angle: 135, name: 'Dark' },
+    { colors: ['#f368e0', '#ff9ff3'], angle: 135, name: 'Pink' },
+    { colors: ['#ff9f43', '#ee5253'], angle: 135, name: 'Orange' },
+    { colors: ['#54a0ff', '#2e86de'], angle: 135, name: 'Blue' },
+    { colors: ['#00d2d3', '#48dbfb'], angle: 135, name: 'Cyan' },
+    { colors: ['#1dd1a1', '#10ac84'], angle: 135, name: 'Green' },
+    { colors: ['#feca57', '#ff9f43'], angle: 135, name: 'Yellow' },
+    { colors: ['#8395a7', '#576574'], angle: 135, name: 'Gray' },
+    { colors: ['#7b2ff7', '#f107a3'], angle: 135, name: 'Vibrant' },
+    { colors: ['#11998e', '#38ef7d'], angle: 135, name: 'Fresh' },
+    { colors: ['#f093fb', '#f5576c'], angle: 135, name: 'Love' },
+    { colors: ['#4facfe', '#00f2fe'], angle: 135, name: 'Sky' },
+    { colors: ['#43e97b', '#38f9d7'], angle: 135, name: 'Lime' },
+    { colors: ['#fa709a', '#fee140'], angle: 135, name: 'Warm' },
+    { colors: ['#30cfd0', '#330867'], angle: 135, name: 'Deep' },
+    { colors: ['#a8edea', '#fed6e3'], angle: 135, name: 'Soft' },
+    { colors: ['#ff9a9e', '#fecfef'], angle: 135, name: 'Rose' },
+    { colors: ['#ffecd2', '#fcb69f'], angle: 135, name: 'Sand' },
+    { colors: ['#ff8177', '#b12a5b'], angle: 135, name: 'Fire' },
+    { colors: ['#f6d365', '#fda085'], angle: 135, name: 'Sunrise' },
+    { colors: ['#84fab0', '#8fd3f4'], angle: 135, name: 'Aurora' },
+    { colors: ['#a1c4fd', '#c2e9fb'], angle: 135, name: 'Cloud' },
+    { colors: ['#d4fc79', '#96e6a1'], angle: 135, name: 'Spring' },
+    { colors: ['#cfd9df', '#e2ebf0'], angle: 135, name: 'Ice' },
+    { colors: ['#e0c3fc', '#8ec5fc'], angle: 135, name: 'Lavender' },
+    { colors: ['#f5576c', '#f093fb'], angle: 135, name: 'Blossom' },
+    { colors: ['#0ba360', '#3cba92'], angle: 135, name: 'Forest' },
+    { colors: ['#00c6ff', '#0072ff'], angle: 135, name: 'Blue Sky' },
+    { colors: ['#ff0844', '#ffb199'], angle: 135, name: 'Hot' },
+    { colors: ['#ff758c', '#ff7eb3'], angle: 135, name: 'Sweet' },
+    { colors: ['#5ee7df', '#b490ca'], angle: 135, name: 'Magic' },
+    { colors: ['#d299c2', '#fef9d7'], angle: 135, name: 'Pastel' },
+    { colors: ['#ff6b6b', '#feca57', '#48dbfb'], angle: 135, name: 'Rainbow' },
+    { colors: ['#ee5a24', '#feca57', '#ff9ff3'], angle: 135, name: 'Sunset 3' },
+    { colors: ['#1dd1a1', '#48dbfb', '#0abde3'], angle: 135, name: 'Ocean 3' },
+    { colors: ['#5f27cd', '#c56cf0', '#f368e0'], angle: 135, name: 'Purple 3' },
+    { colors: ['#ff9f43', '#ee5253', '#f368e0'], angle: 135, name: 'Fiery' },
+    { colors: ['#7b2ff7', '#f107a3', '#ffa17f'], angle: 135, name: 'Neon Trio' },
+    { colors: ['#11998e', '#38ef7d', '#c8ff6a'], angle: 135, name: 'Green Mix' },
+    { colors: ['#4facfe', '#00f2fe', '#a8edea'], angle: 135, name: 'Aqua Trio' },
+    { colors: ['#f093fb', '#f5576c', '#fa709a'], angle: 135, name: 'Pink Trio' },
+    { colors: ['#fa709a', '#fee140', '#ff8177'], angle: 135, name: 'Sunset Warm' },
+    { colors: ['#30cfd0', '#330867', '#7b2ff7'], angle: 135, name: 'Cosmic' },
+    { colors: ['#a8edea', '#fed6e3', '#f093fb'], angle: 135, name: 'Pastel Trio' },
+    { colors: ['#ff9a9e', '#fecfef', '#c2e9fb'], angle: 135, name: 'Soft Trio' },
+    { colors: ['#ffecd2', '#fcb69f', '#ee5253'], angle: 135, name: 'Warm Mix' },
+    { colors: ['#84fab0', '#8fd3f4', '#a1c4fd'], angle: 135, name: 'Fresh Trio' },
+    { colors: ['#a1c4fd', '#c2e9fb', '#d4fc79'], angle: 135, name: 'Cool Trio' },
+    { colors: ['#cfd9df', '#e2ebf0', '#a1c4fd'], angle: 135, name: 'Ice Trio' },
+    { colors: ['#e0c3fc', '#8ec5fc', '#84fab0'], angle: 135, name: 'Lavender Trio' },
+    { colors: ['#0ba360', '#3cba92', '#38ef7d'], angle: 135, name: 'Forest Trio' },
+    { colors: ['#00c6ff', '#0072ff', '#1dd1a1'], angle: 135, name: 'Sky Blue' },
+    { colors: ['#ff0844', '#ffb199', '#feca57'], angle: 135, name: 'Hot Trio' },
+    { colors: ['#ff758c', '#ff7eb3', '#feca57'], angle: 135, name: 'Sweet Trio' },
+    { colors: ['#5ee7df', '#b490ca', '#f093fb'], angle: 135, name: 'Magic Trio' },
+    { colors: ['#d299c2', '#fef9d7', '#a8edea'], angle: 135, name: 'Dreamy' },
+    { colors: ['#f5576c', '#f093fb', '#4facfe'], angle: 135, name: 'Fusion' },
+    { colors: ['#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1'], angle: 135, name: 'Full Spectrum' },
+    { colors: ['#ee5a24', '#feca57', '#ff9ff3', '#5f27cd'], angle: 135, name: 'Fire to Purple' },
+    { colors: ['#1dd1a1', '#48dbfb', '#0abde3', '#5f27cd'], angle: 135, name: 'Ocean to Purple' },
+    { colors: ['#5f27cd', '#c56cf0', '#f368e0', '#ff9ff3'], angle: 135, name: 'Purple Set' },
+    { colors: ['#ff9f43', '#ee5253', '#f368e0', '#5f27cd'], angle: 135, name: 'Warm to Cool' },
+    { colors: ['#7b2ff7', '#f107a3', '#ffa17f', '#feca57'], angle: 135, name: 'Vibrant 4' },
+    { colors: ['#11998e', '#38ef7d', '#c8ff6a', '#feca57'], angle: 135, name: 'Green to Yellow' },
+    { colors: ['#4facfe', '#00f2fe', '#a8edea', '#84fab0'], angle: 135, name: 'Cool 4' },
+    { colors: ['#f093fb', '#f5576c', '#fa709a', '#feca57'], angle: 135, name: 'Pink Warm' },
+    { colors: ['#fa709a', '#fee140', '#ff8177', '#b12a5b'], angle: 135, name: 'Fire 4' },
+    { colors: ['#30cfd0', '#330867', '#7b2ff7', '#f107a3'], angle: 135, name: 'Neon 4' },
+    { colors: ['#a8edea', '#fed6e3', '#f093fb', '#f5576c'], angle: 135, name: 'Pastel 4' },
+    { colors: ['#84fab0', '#8fd3f4', '#a1c4fd', '#e0c3fc'], angle: 135, name: 'Aurora 4' },
+    { colors: ['#0ba360', '#3cba92', '#38ef7d', '#c8ff6a'], angle: 135, name: 'Forest 4' },
+    { colors: ['#00c6ff', '#0072ff', '#1dd1a1', '#38ef7d'], angle: 135, name: 'Sky to Green' },
+    { colors: ['#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#5f27cd'], angle: 135, name: 'Full Rainbow' },
+    { colors: ['#ee5a24', '#feca57', '#ff9ff3', '#5f27cd', '#341f97'], angle: 135, name: 'Sunset Full' },
+    { colors: ['#1dd1a1', '#48dbfb', '#0abde3', '#5f27cd', '#341f97'], angle: 135, name: 'Ocean Full' },
+    { colors: ['#5f27cd', '#c56cf0', '#f368e0', '#ff9ff3', '#feca57'], angle: 135, name: 'Purple Full' },
+    { colors: ['#7b2ff7', '#f107a3', '#ffa17f', '#feca57', '#ee5253'], angle: 135, name: 'Vibrant 5' },
+    { colors: ['#11998e', '#38ef7d', '#c8ff6a', '#feca57', '#ff9f43'], angle: 135, name: 'Green Full' },
+    { colors: ['#4facfe', '#00f2fe', '#a8edea', '#84fab0', '#d4fc79'], angle: 135, name: 'Cool 5' },
+    { colors: ['#f093fb', '#f5576c', '#fa709a', '#feca57', '#ff9f43'], angle: 135, name: 'Pink Warm 5' },
+    { colors: ['#30cfd0', '#330867', '#7b2ff7', '#f107a3', '#f5576c'], angle: 135, name: 'Cosmic 5' },
+    { colors: ['#0ba360', '#3cba92', '#38ef7d', '#c8ff6a', '#d4fc79'], angle: 135, name: 'Forest 5' }
+  ];
+
+  const GRADIENT_PRESETS = [...FACEBOOK_GRADIENTS, ...REGULAR_GRADIENTS];
+  let bgGradient = null;
+
+  let lastPaletteIndex = -1;
+  function getRandomPaletteColor() {
+    let idx;
+    do { idx = Math.floor(Math.random() * (COLOR_PALETTE.length - 2)) + 2; }
+    while (idx === lastPaletteIndex && COLOR_PALETTE.length > 3);
+    lastPaletteIndex = idx; return COLOR_PALETTE[idx];
+  }
+
+  let bgImage = null; let bgColor = '#1e3c72'; let textColor = '#ffffff';
+  let logoImage = null; let logoPlaceholderVisible = true;
+  let FB_NAME = '하산'; let FB_NAME_VISIBLE = true; let FB_NAME_COLOR = '#1877f2';
+  let fbNameOffsetX = 0; let fbNameOffsetY = 0;
+  let logoX = 10; let logoY = 10; let LOGO_SIZE = 110;
+  const DEFAULT_LOGO_SIZE = 110;
+  const FB_FONT_RATIO = 0.044; const FB_F_RATIO = 0.047;
+  const FB_CY_RATIO = 0.0625; const FB_RIGHT_RATIO = 0.031;
+  const FB_CIRCLE_R_RATIO = 0.033; const FB_CIRCLE_OFFSET_RATIO = 0.022;
+  const FB_CIRCLE_COLOR = '#1877f2'; const FB_ICON_COLOR = '#ffffff';
+
+  let texts = [
+    { text: 'নতুন ভিডিও', size: 70, x: 0.5, y: 0.40, isBold: true, rotation: 0, color: '#ffffff' },
+    { text: 'দেখুন এখনই', size: 32, x: 0.5, y: 0.60, isBold: false, rotation: 0, color: '#ffffff' }
+  ];
+
+  let selectedIdx = null; let editingIdx = null; let editingFbName = false;
+  let dragging = null; let dragOffset = { x: 0, y: 0 };
+  let menuTargetIdx = null; let menuTargetIsFbName = false;
+  let pressedLogo = false; let draggingLogo = false; let logoDragOffset = { x: 0, y: 0 };
+  let draggingFbName = false; let fbNameDragOffset = { x: 0, y: 0 };
+  const LONG_PRESS_MS = 500; let pressTimer = null;
+  let pressStartPoint = { x: 0, y: 0 }; let pressedTextIdx = null;
+  let longPressTriggered = false; let pressedFbName = false;
+
+  function buildColorStrip() {
+    colorStrip.innerHTML = '';
+    COLOR_PALETTE.forEach(color => {
+      const btn = document.createElement('button');
+      btn.className = 'color-strip-item'; btn.style.background = color;
+      btn.setAttribute('data-color', color);
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (menuTargetIsFbName) { pushUndo(true); FB_NAME_COLOR = color; updateStripActive(); scheduleDraw(); return; }
+        if (menuTargetIdx !== null && typeof menuTargetIdx === 'number' && menuTargetIdx < texts.length) {
+          pushUndo(true); texts[menuTargetIdx].color = color; selectedIdx = menuTargetIdx; updateStripActive(); scheduleDraw();
+        }
+      });
+      colorStrip.appendChild(btn);
+    });
+  }
+  function updateStripActive() {
+    const items = colorStrip.querySelectorAll('.color-strip-item');
+    let activeColor = '';
+    if (menuTargetIsFbName) activeColor = (FB_NAME_COLOR || '').toLowerCase();
+    else if (menuTargetIdx !== null && typeof menuTargetIdx === 'number' && texts[menuTargetIdx]) activeColor = (texts[menuTargetIdx].color || '').toLowerCase();
+    items.forEach(item => {
+      const c = (item.getAttribute('data-color') || '').toLowerCase();
+      if (c === activeColor) item.classList.add('active'); else item.classList.remove('active');
+    });
+  }
+  function showColorPopup() {
+    colorPopup.classList.add('show'); updateStripActive();
+    setTimeout(() => { const active = colorStrip.querySelector('.color-strip-item.active');
+      if (active) active.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 50);
+  }
+  function hideColorPopup() { colorPopup.classList.remove('show'); }
+
+  const uniqueColorsRaw = [
+    '#e53935','#d32f2f','#c62828','#b71c1c','#ef5350','#ff5252','#ff1744','#ff2d55','#dc2626','#991b1b',
+    '#e91e63','#d81b60','#c2185b','#ec407a','#f06292','#ff4081','#f50057','#e1306c','#ff6bcb','#ad1457',
+    '#9c27b0','#8e24aa','#7b1fa2','#6a1b9a','#4a148c','#7b2ff7','#9f4fff','#ab47bc','#ba68c8','#673ab7',
+    '#2196f3','#1976d2','#1565c0','#0d47a1','#1877f2','#3b5998','#42a5f5','#0ea5e9','#0288d1','#174ea6',
+    '#00bcd4','#0097a7','#00838f','#006064','#26a69a','#00897b','#00796b','#00c7be','#00acc1','#11998e',
+    '#4caf50','#43a047','#388e3c','#2e7d32','#1b5e20','#66bb6a','#16a34a','#0d7a37','#22c55e','#34c759',
+    '#ffeb3b','#fdd835','#fbc02d','#f9a825','#f57f17','#ffb800','#f59e0b','#ffc107','#ffd600','#fbbf24',
+    '#ff9800','#fb8c00','#f57c00','#ef6c00','#e65100','#ff5722','#f4511e','#ff7043','#ea580c','#f97316'
+  ];
+  function removeDuplicateColors(colors) {
+    const seen = new Set(); const result = [];
+    for (const c of colors) { const k = c.toLowerCase().trim();
+      if (!seen.has(k)) { seen.add(k); result.push(c); } }
+    return result;
+  }
+  const uniqueColors = removeDuplicateColors(uniqueColorsRaw);
+  function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  const shuffledColors = shuffleArray(uniqueColors);
+  const shuffledGradients = shuffleArray(GRADIENT_PRESETS);
+
+  const sampleIdsRaw = [
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/1_Taka_note_1973_obverse.jpg/1280px-1_Taka_note_1973_obverse.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/2_Taka_note_1988_obverse.jpg/1280px-2_Taka_note_1988_obverse.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/10_Taka_polymer_note_2000_obverse.jpg/1280px-10_Taka_polymer_note_2000_obverse.jpg",
+    "photo-1591604129939-f1efa4d9f7fa","photo-1519817650390-64a93db51149","photo-1542816417-0983c9c9ad53",
+    "photo-1584551246679-0daf3d275d0f","photo-1564769662533-4f00a87b4056","photo-1548783307-f63adc3f200b",
+    "photo-1585129777188-9c4b3f5e7d5a","photo-1526392060635-9d6019884377","photo-1512970648275-7c0e0f6b7ba4",
+    "photo-1564121211835-e88c852648ab","photo-1541339907198-e08756dedf3f",
+    "photo-1532693322450-2cb5c511067d","photo-1514897575457-c4db467cf78e","photo-1509773896068-7fd415d91e2e",
+    "photo-1522030299830-16b8d3d049fe","photo-1518623489648-a173ef7824f3",
+    "photo-1502602898657-3e91760cbb34","photo-1513635269975-59663e0ac1ad","photo-1522083165195-3424ed129620",
+    "photo-1531572753322-ad063cecc140","photo-1552832230-c0197dd311b5","photo-1516483638261-f4dbaf036963",
+    "photo-1523906834658-6e24ef2386f9","photo-1533929736458-ca588d08c8be","photo-1499856871958-5b9627545d1a",
+    "photo-1549144511-f099e773c147","photo-1513622470522-26c3c8a854bc","photo-1541849546-216549ae216d",
+    "photo-1555992336-fb0d29498b13","photo-1555881400-74d7acaacd8b","photo-1513407030348-c983a97b98d8",
+    "photo-1613395877344-13d4a8e0d49e","photo-1533105079780-92b9be482077","photo-1534351590666-13e3e96b5017",
+    "photo-1551867633-194f125bddfa","photo-1560969184-10fe8719e047","photo-1583422409516-2895a77efded",
+    "photo-1513735492246-483525079686","photo-1524231757912-21f4fe3a7200","photo-1467269204594-9661b134dd2b",
+    "photo-1531366936337-7c912a4589a7",
+    "photo-1508050919630-b135583b29ab","photo-1542051841857-5f90071e7989","photo-1493976040374-85c8e12f0c0e",
+    "photo-1540959733332-eab4deabeeaf","photo-1526495124232-a04e1849168c","photo-1565967511849-76a60a516170",
+    "photo-1563492065599-3520f775eeed","photo-1541432901042-2d8bd64b4a9b","photo-1596422846543-75c6fc197f07",
+    "photo-1512453979798-5ea266f8880c","photo-1518684079-3c830dcef090","photo-1546436836-07a91091f160",
+    "photo-1564507592333-c60657eea523","photo-1548013146-72479768bada","photo-1585320806297-9794b3e4eeae",
+    "photo-1538332576228-eb5b4c4de6f5","photo-1485871981521-5b1fd3805eee","photo-1496442226666-8d4d0e62e6e9",
+    "photo-1514565131-fce0801e5785","photo-1518235506717-e1ed3306a89b","photo-1534430480872-3498386e7856",
+    "photo-1508964942454-1a56651d54ac","photo-1524820197278-540916411e20","photo-1449034446853-66c86144b0ad",
+    "photo-1516738901171-8eb4fc13bd20",
+    "photo-1518495973542-4542c06a5843","photo-1441974231531-c6227db76b6e","photo-1447752875215-b2761acb3c5d",
+    "photo-1426604966848-d7adac402bff","photo-1470071459604-3b5ec3a7fe05","photo-1472214103451-9374bd1c798e",
+    "photo-1501785888041-af3ef285b470","photo-1502082553048-f009c37129b9","photo-1506260408121-e353d10b87c7",
+    "photo-1519681393784-d120267933ba","photo-1444927714506-8492d94b4e3d","photo-1465101162946-4377e57745c3",
+    "photo-1475924156734-496f6cac6ec1","photo-1494548162494-384bba4ab999","photo-1497436072909-60f360e1d4b1",
+    "photo-1439066615861-d1af74d74000","photo-1470252649378-9c29740c9fa8","photo-1418065460487-3e41a6c84dc5",
+    "photo-1464822759023-fed622ff2c3b","photo-1476231682828-37e571bc172f","photo-1454372182658-c712e4c5a1db",
+    "photo-1469474968028-56623f02e42e","photo-1433086966358-54859d0ed716","photo-1483728642387-6c3bdd6c93e5",
+    "photo-1493246507139-91e8fad9978e","photo-1465101046530-73398c7f28ca","photo-1501854140801-50d01698950b",
+    "photo-1518173946687-a4c8892bbd9f","photo-1470770841072-f978cf4d019e","photo-1439853949127-fa647821eba0",
+    "photo-1485470733090-0aae1788d5af","photo-1445264718234-a623be589d37","photo-1504198453319-5ce911bafcde",
+    "photo-1454789548928-9efd52dc4031","photo-1476514525535-07fb3b4ae5f1","photo-1494500764479-0c8f2919a3d8",
+    "photo-1482192505345-5655af888cc4","photo-1455218873509-8097305ee378","photo-1472396961693-142e6e269027",
+    "photo-1414609245224-afa02bfb3fda","photo-1444080748397-f442aa95c3e5","photo-1470509037663-253afd7f0f51",
+    "photo-1428908728789-d2de25dbd4e2","photo-1500530855697-b586d89ba3ee","photo-1470246973918-29a93221c455",
+    "photo-1465056836041-7f43ac27dcb5","photo-1508669232496-137b159c1cdb","photo-1508672019048-805c876b67e2",
+    "photo-1497752531616-c3afd9760a11","photo-1516467508483-a7212febe31a","photo-1500595046743-cd271d694d30",
+    "photo-1544943910-4c1dc44aab44","photo-1560807707-8cc77767d783","photo-1500382017468-9049fed747ef",
+    "photo-1500534623283-312aade485b7","photo-1506744038136-46273834b3fb","photo-1533107862482-0e6974b06ec4",
+    "photo-1594026112284-02bb6f3352fe",
+    "photo-1505142468610-359e7d316be0","photo-1507525428034-b723cf961d3e","photo-1509233725247-49e657c54213",
+    "photo-1439405326854-014607f694d7","photo-1476673160081-cf065607f449","photo-1519046904884-53103b34b206",
+    "photo-1471922694854-ff1b63b20054","photo-1505118380757-91f5f5632de0","photo-1473116763249-2faaef81ccda",
+    "photo-1502208327471-d5dde4d78995",
+    "photo-1506905925346-21bda4d32df4","photo-1432405972618-c60b0225b8f9","photo-1508739773434-c26b3d09e071",
+    "photo-1500937386664-56d1dfef3854","photo-1574323347407-f5e1ad6d020b","photo-1560493676-04071c5f467b",
+    "photo-1533069027836-fa937181a8ce","photo-1465146344425-f00d5f5c8f07","photo-1499529112087-3cb3b73cec95",
+    "photo-1560184611-5b7b2e14b0a9","photo-1592982537447-7440770cbfc9","photo-1595846519845-68e298c2edd8",
+    "photo-1544787219-7f47ccb76574","photo-1587033411391-5d9e51cce126","photo-1595855759920-86582396756a",
+    "photo-1567906022020-1a0a0f6b6e9f",
+    "photo-1454496522488-7a8e488e8606","photo-1486870591958-9b9d0d1dda99","photo-1519904981063-b0cf448d479e",
+    "photo-1565793298595-6a879b1d9492","photo-1518709268805-4e9042af9f23","photo-1581094794329-c8112a89af12",
+    "photo-1516937941344-00b4e0337589","photo-1567789884554-0b844b597180","photo-1587293852726-70cdb56c2866",
+    "photo-1581092160607-ee22621dd758","photo-1590959651373-a3db0f38a961","photo-1567604130959-7ea7ab2a7807",
+    "photo-1518709594023-6eab9bab7b23","photo-1554469384-e58fac16e23a","photo-1547394765-185e1e68f34e",
+    "photo-1559827260-dc66d52bef19","photo-1605281317010-fe5ffe798166","photo-1494412685616-a5d310fbb07d",
+    "photo-1544551763-46a013bb70d5","photo-1502726299822-6f583f972e02","photo-1544551763-77ef2d0cfc6c",
+    "photo-1567427017947-545c5f8d16ad","photo-1527433558971-9e6c7fd5b453","photo-1519074069444-1ba4fff66d16",
+    "photo-1559060017-445fb9722f2a","photo-1595675024853-0f3ec9098ac7",
+    "photo-1449824913935-59a10b8d2000","photo-1494783367193-149034c05e8f","photo-1502877338535-766e1452684a",
+    "photo-1547036967-23d11aacaee0","photo-1469854523086-cc02fe5d8800","photo-1476984747123-5b7c31c0e6e2",
+    "photo-1528181304800-259b08848526","photo-1516912847674-29b7f5a3f7aa","photo-1477959858617-67f85cf4f1df",
+    "photo-1419242902214-272b3f66ee7a","photo-1534796636912-3b95b3ab5986","photo-1444703686981-a3abbc4d4fe3",
+    "photo-1462331940025-496dfbfc7564","photo-1502134249126-9f3755a50d78","photo-1543722530-d2c3201371e7",
+    "photo-1516339901601-2e1b62dc0c45","photo-1504333638930-c8787321eee0","photo-1532372320572-cda25653a694",
+    "photo-1495616811223-4d98c6e9c869","photo-1500534314209-a25ddb2bd429","photo-1435224668334-0f82ec57b605",
+    "photo-1568092446-3b8a4c4ae4f2","photo-1548263594-a71ea65a8598","photo-1504384308090-c894fdcc538d",
+    "photo-1490750967868-88aa4486c946","photo-1522748906645-95d8adfd52c7","photo-1487070183336-b863922373d4",
+    "photo-1508610048659-a06b669e3321","photo-1518709766631-a6a7f45921c3","photo-1502672260266-1c1ef2d93688",
+    "photo-1526047932273-341f2a7631f9","photo-1459411552884-841db9b3cc2a","photo-1416879595882-3373a0480b5b",
+    "photo-1462275646964-a0e3386b89fa","photo-1519378058457-4c29a0a2efac","photo-1487530811176-3780de880c2d",
+    "photo-1518895949257-7621c3c786d7","photo-1502977249166-824b3a8a4d6d","photo-1469259943454-aa100abba749",
+    "photo-1491147334573-44cbb4602074","photo-1496062031456-07b8f162a322","photo-1512756290469-ec264b7fbf87",
+    "photo-1499002238440-d264edd596ec","photo-1523694576729-dc99e9c0b0f0","photo-1526397751294-331021109fbd",
+    "photo-1518837695005-2083093ee35b",
+    "photo-1444464666168-49d633b86797","photo-1552728089-57bdde30beb3","photo-1441057206919-63d19fac2369",
+    "photo-1452570053594-1b985d6ea890","photo-1547721064-da6cfb341d50","photo-1553284965-83fd3e82fa5a",
+    "photo-1553284965-1c1eb6ea2e2f","photo-1564349683136-77e08dba1ef7","photo-1534188753412-3e26d0d618d6",
+    "photo-1552053831-71594a27632d","photo-1514888286974-6c03e2ca1dba","photo-1568393691080-33bc8e2cfb5f",
+    "photo-1563280388-7a8a6a1a5b0d","photo-1456926631375-92c8ce872def","photo-1425082661705-1834bfd09dca",
+    "photo-1552799446-159ba9523315",
+    "photo-1483664852095-d6cc6870702d",
+    "photo-1534088568595-a066f410bcda","photo-1428592953211-077101b2021b","photo-1487621167305-5d248087c724",
+    "photo-1561484930-998b6a7b22e8",
+    "photo-1505881502353-a1986add3762","photo-1559128010-7c1ad6e1b6a5",
+    "photo-1508804185872-d7badad00f7d","photo-1517783999520-f068d7431a60",
+    "photo-1502933691298-84fc14542831",
+    "photo-1509316785289-025f5b846b35","photo-1547235001-d703406d3f17","photo-1502680390469-be75c86b636f",
+    "photo-1614313913007-2b4ae8ce32d6","photo-1614730321146-b6fa6a46bcb4","photo-1446776811953-b23d57bd21aa",
+    "photo-1451187580459-43490279c0fa","photo-1614642264762-d0a3b8bf3700","photo-1541185933-ef5d8ed016c2",
+    "photo-1614728263952-84ea256f9679",
+    "photo-1542751371-adc38448a05e","photo-1552820728-8b83bb6b773f","photo-1493711662062-fa541adb3fc8",
+    "photo-1511512578047-dfb367046420","photo-1550745165-9bc0b252726f","photo-1580327344181-c1163234e5a0",
+    "photo-1612287230202-1ff1d85d1bdf","photo-1531525645387-7f14be1bdbbd",
+    "photo-1554224155-6726b3ff858f","photo-1611974789855-9c2a0a7236a3","photo-1518546305927-5a555bb7020d",
+    "photo-1621761191319-c6fb62004040","photo-1610375461246-83df859d849d","photo-1633158829585-23ba8f7c8caf",
+    "photo-1591033594798-33227a05780d",
+    "photo-1511707171634-5f897ff02aa9","photo-1592750475338-74b7b21085ab","photo-1517336714731-489689fd1ca8",
+    "photo-1496181133206-80ce9b88a853","photo-1580894732444-8ecded7900cd","photo-1622979135225-d2ba269cf1ac",
+    "photo-1485827404703-89b55fcc595e","photo-1526170375885-4d8ecf77b99f","photo-1601784551446-20c9e07cdbdb",
+    "photo-1565299624946-b28f40a0ae38","photo-1568901346375-23c9450c58cd","photo-1512058564366-18510be2db19",
+    "photo-1551024506-0bccd828d307","photo-1578985545062-69928b1d9587","photo-1495474472287-4d71bcdd2085",
+    "photo-1546069901-ba9599a7e63c","photo-1551782450-a2132b4ba21d","photo-1567620905732-2d1ec7ab7445",
+    "photo-1511671782779-c97d3d27a1d4","photo-1470225620780-dba8ba36b745","photo-1510915361894-db8b60106cb1",
+    "photo-1493225457124-a3eb161ffa5f","photo-1501612780327-45045538702b","photo-1514320291840-2e0a9bf2a9ae",
+    "photo-1520523839897-bd0b52f945a0",
+    "photo-1534438327276-14e5300c3a48","photo-1571019613454-1cb2f99b2d8b","photo-1518611012118-696072aa579a",
+    "photo-1476480862126-209bfaa8edc8","photo-1550345332-09e3ac987658","photo-1517836357463-d25dfeac3438",
+    "photo-1540497077202-7c8a3999166f",
+    "photo-1481627834876-b7833e8f5570","photo-1503676260728-1c00da094a0b","photo-1456513080510-7bf3a84b82f8",
+    "photo-1497633762265-9d179a990aa6","photo-1544716278-ca5e3f4abd8c","photo-1523050854058-8df90110c9f1",
+    "photo-1513475382585-d06e58bcb0e0",
+    "photo-1541123437800-1bb1317badc2","photo-1585421514738-01798e348b17","photo-1587145820266-a5951ee6f620",
+    "photo-1590486803833-1c5dc8ddd4c8","photo-1621274403997-37aace184f49",
+    "photo-1489599849927-2ee91cede3ba","photo-1536440136628-849c177e76a1","photo-1440404653325-ab127d49abc1",
+    "photo-1478720568477-152d9b164e26","photo-1574267432553-4b4628081c31","photo-1594909122845-11baa439b7bf",
+    "photo-1517685352821-92cf88aee5a5","photo-1533050487297-09b450131914","photo-1550684376-efcbd6e3f031",
+    "photo-1493514789931-586cb221d7a7","photo-1533514114760-4384f1a42e94","photo-1516414447565-b14be0adf13e",
+    "photo-1513151233558-d860c5398176","photo-1546484475-7f7bd55792da","photo-1531306728370-e2ebd9d7bb99",
+    "photo-1557682250-33bd709cbe85",
+    "photo-1543589077-47d81606c1bf","photo-1512389142860-9c449e58a543","photo-1509551388413-e18d0ac5d495",
+    "photo-1530103862676-de8c9debad1d","photo-1514525253161-7a46d19cd819","photo-1533231285677-9c5da1eb7c48",
+    "photo-1558591710-4b4a1ae0f04d","photo-1504711434969-e33886168f5c","photo-1551288049-bebda4e38f71",
+    "photo-1541701494587-cb58502866ab","photo-1557683316-973673baf926",
+    "photo-1531123897727-8f129e1688ce","photo-1507003211169-0a1dd7228f2d","photo-1503454537195-1dcabb73ffb9",
+    "photo-1544367567-0f2fcb009e0b","photo-1519085360753-af0119f7cbe7","photo-1552374196-c4e7ffc6e126",
+    "photo-1524504388940-b1c1722653e1",
+    "photo-1503376780353-7e6692767b70","photo-1552519507-da3b142c6e3d","photo-1555215695-3004980ad54e",
+    "photo-1568605117036-5fe5e7bab0b7","photo-1558981806-ec527fa84c39","photo-1436491865332-7a61a109cc05",
+    "photo-1544620347-c4fd4a3d5957","photo-1494976388531-d1058494cdd8","photo-1558618666-fcd25c85cd64",
+    "photo-1540747913346-19e32dc3e97e","photo-1579952363873-27f3bade9f55","photo-1546519638-68e109498ffc",
+    "photo-1626224583764-f87db24ac4ea","photo-1615117972428-28de67cda58e","photo-1461896836934-ffe607ba8211",
+    "photo-1530549387789-4c1017266635",
+    "photo-1552664730-d307ca884978","photo-1533227268428-f9ed0900fb3b","photo-1594736797933-d0501ba2fe65",
+    "photo-1611195974226-a6a9be9dd763","photo-1553062407-98eeb64c6a62",
+    "photo-1606326608606-aa0b62935f2b","photo-1434030216411-0b793f4b4173","photo-1516534775068-ba3e7458af70",
+    "photo-1509228468518-180dd4864904",
+    "photo-1549465220-1a8b9238cd48","photo-1513885535751-8b9238bd345a","photo-1607083206869-4c7672e72a8a",
+    "photo-1556742049-0cfed4f6a45d","photo-1607082348824-0a96f2a4b9da",
+    "photo-1538485399081-7c8978e5beb1","photo-1503177119275-0aa32b3a9368","photo-1501594907352-04cda38ebc29",
+    "photo-1509248961158-e54f6934749c",
+    "photo-1497366216548-37526070297c","photo-1521737604893-d14cc237f11d","photo-1556761175-b413da4baf72",
+    "photo-1454165804606-c3d57bc86b40","photo-1517245386807-bb43f82c33c4",
+    "photo-1558655146-9f40138edfeb","photo-1541961017774-22349e4a1262","photo-1513364776144-60967b0f800f",
+    "photo-1550859492-d5da9d8e45f3","photo-1516035069371-29a1b244cc32",
+    "photo-1499750310107-5fef28a66643","photo-1484480974693-6ca0a78fb36b","photo-1506784983877-45594efa4cbe",
+    "photo-1519834785169-98be25ec3f84","photo-1493612276216-ee3925520721"
+  ];
+
+  const sampleIds = [...new Set(sampleIdsRaw)];
+
+  /* ✅ FIX #2: ছবি লোড + fallback */
+  function makeUrl(id, w) {
+    if (typeof id === 'string' && (id.startsWith('http://') || id.startsWith('https://'))) return id;
+    return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
+  }
+  function makeFallbackUrl(id, w, h) {
+    const seed = encodeURIComponent(String(id).replace(/[^a-zA-Z0-9]/g, '').slice(0, 40)) || 'fasti';
+    return `https://picsum.photos/seed/${seed}/${w}/${h}`;
+  }
+
+  let userCards = [];
+
+  function saveSettings() {
+    try { const settingsData = {
+        bgColor, textColor, bgGradient: bgGradient ? JSON.parse(JSON.stringify(bgGradient)) : null,
+        FB_NAME, FB_NAME_VISIBLE, FB_NAME_COLOR, texts,
+        canvasWidth: canvas.width, canvasHeight: canvas.height,
+        logoX, logoY, logoSize: LOGO_SIZE,
+        logoPlaceholderVisible, fbNameOffsetX, fbNameOffsetY, version: 29 };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsData));
+    } catch(e) { console.warn('Save settings failed', e); }
+  }
+  function saveUserCards() {
+    try { const cardsData = userCards.map(c => ({ thumb: c.thumb || c.imgDataUrl, text: c.text, sub: c.sub, id: c.id || null }));
+      localStorage.setItem(USERCARDS_KEY, JSON.stringify(cardsData)); return true;
+    } catch(e) { console.warn('Save user cards failed', e); showToast('⚠️ স্টোরেজ ভরে গেছে', 'error', 3000); return false; }
+  }
+  function loadFromLocalStorage() {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('thumbMaker') || /^fastiThum_(settings|userCards)_v(2[4-8])$/.test(k)) localStorage.removeItem(k);
+    });
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if (saved) {
+      try { const data = JSON.parse(saved);
+        if (data.version === 29) {
+          bgColor = data.bgColor || '#1e3c72'; textColor = data.textColor || '#ffffff';
+          if (data.bgGradient && Array.isArray(data.bgGradient.colors)) bgGradient = { colors: data.bgGradient.colors.slice(), angle: (typeof data.bgGradient.angle === 'number') ? data.bgGradient.angle : 135 };
+          FB_NAME = data.FB_NAME || '하산';
+          FB_NAME_VISIBLE = (data.FB_NAME_VISIBLE !== undefined) ? data.FB_NAME_VISIBLE : true;
+          if (typeof data.FB_NAME_COLOR === 'string') FB_NAME_COLOR = data.FB_NAME_COLOR;
+          if (typeof data.logoX === 'number') logoX = data.logoX;
+          if (typeof data.logoY === 'number') logoY = data.logoY;
+          if (typeof data.logoSize === 'number') LOGO_SIZE = data.logoSize;
+          if (typeof data.logoPlaceholderVisible === 'boolean') logoPlaceholderVisible = data.logoPlaceholderVisible;
+          if (typeof data.fbNameOffsetX === 'number') fbNameOffsetX = data.fbNameOffsetX;
+          if (typeof data.fbNameOffsetY === 'number') fbNameOffsetY = data.fbNameOffsetY;
+          if (Array.isArray(data.texts) && data.texts.length > 0) {
+            texts = data.texts.filter(t => t && typeof t.text === 'string');
+            if (texts.length === 0) texts = [
+              { text: 'নতুন ভিডিও', size: 70, x: 0.5, y: 0.40, isBold: true, rotation: 0, color: '#ffffff' },
+              { text: 'দেখুন এখনই', size: 32, x: 0.5, y: 0.60, isBold: false, rotation: 0, color: '#ffffff' }
+            ];
+            texts.forEach(t => { if (typeof t.rotation !== 'number') t.rotation = 0; if (!t.color) t.color = textColor; });
+          }
+          if (data.canvasWidth) canvas.width = data.canvasWidth;
+          if (data.canvasHeight) canvas.height = data.canvasHeight;
+        }
+      } catch(e) { console.warn('Load settings failed', e); }
+    }
+    const cardsSaved = localStorage.getItem(USERCARDS_KEY);
+    if (cardsSaved) {
+      try { const cardsData = JSON.parse(cardsSaved);
+        if (Array.isArray(cardsData)) userCards = cardsData.map(c => ({
+          id: c.id || null, imgDataUrl: c.thumb || c.imgDataUrl, thumb: c.thumb || c.imgDataUrl,
+          text: c.text || '', sub: c.sub || '' }));
+      } catch(e) { console.warn('Load user cards failed', e); }
+    }
+  }
+
+  function showFloatingMenu(canvasX, canvasY, targetIdx, isFbName) {
+    menuTargetIdx = targetIdx; menuTargetIsFbName = !!isFbName; pressedFbName = isFbName;
+    if (!isFbName && targetIdx !== 'logo' && targetIdx !== 'logo-placeholder') selectedIdx = targetIdx;
+    else selectedIdx = null;
+    const rect = canvas.getBoundingClientRect();
+    const wrapRect = canvasWrap.getBoundingClientRect();
+    const scaleX = rect.width / canvas.width; const scaleY = rect.height / canvas.height;
+    let leftPx = (rect.left - wrapRect.left) + canvasX * scaleX;
+    let topPx = (rect.top - wrapRect.top) + canvasY * scaleY - 10;
+    floatingMenu.style.display = 'flex'; floatingMenu.classList.add('show');
+    if (targetIdx === 'logo' || targetIdx === 'logo-placeholder') {
+      menuEditBtn.style.display = 'none'; menuColorBtn.style.display = 'none'; menuDeleteBtn.style.display = 'flex';
+    } else { menuEditBtn.style.display = 'flex'; menuColorBtn.style.display = 'flex'; menuDeleteBtn.style.display = 'flex'; }
+    requestAnimationFrame(() => {
+      const menuRect = floatingMenu.getBoundingClientRect();
+      const halfW = menuRect.width / 2; const margin = 8;
+      const minLeft = halfW + margin; const maxLeft = wrapRect.width - halfW - margin;
+      leftPx = Math.max(minLeft, Math.min(maxLeft, leftPx));
+      if (topPx < menuRect.height + margin) { topPx = topPx + menuRect.height + 20; floatingMenu.style.transform = 'translate(-50%, 0)'; }
+      else { floatingMenu.style.transform = 'translate(-50%, -100%)'; }
+      floatingMenu.style.left = `${leftPx}px`; floatingMenu.style.top = `${topPx}px`;
+    });
+    scheduleDraw();
+  }
+  function hideFloatingMenu() {
+    floatingMenu.classList.remove('show'); floatingMenu.style.display = 'none';
+    menuTargetIdx = null; menuTargetIsFbName = false; pressedFbName = false; pressedLogo = false; hideColorPopup();
+  }
+  function startTyping(idx) {
+    if (idx === null || idx >= texts.length) return;
+    editingIdx = idx; editingFbName = false; selectedIdx = idx;
+    hiddenInput.value = texts[idx].text || ''; hiddenInput.focus();
+    setTimeout(() => hiddenInput.setSelectionRange(hiddenInput.value.length, hiddenInput.value.length), 10);
+    scheduleDraw();
+  }
+  function startTypingFbName() {
+    editingFbName = true; editingIdx = null; selectedIdx = null;
+    hiddenInput.value = FB_NAME; hiddenInput.focus();
+    setTimeout(() => hiddenInput.setSelectionRange(hiddenInput.value.length, hiddenInput.value.length), 10);
+    scheduleDraw();
+  }
+  function stopTyping() {
+    if (editingFbName) {
+      if (hiddenInput.value.trim() === '') FB_NAME_VISIBLE = false;
+      else { FB_NAME = hiddenInput.value; FB_NAME_VISIBLE = true; }
+      editingFbName = false;
+    } else if (editingIdx !== null) {
+      if (!texts[editingIdx] || (texts[editingIdx].text || '').trim() === '') { texts.splice(editingIdx, 1); selectedIdx = null; }
+      editingIdx = null;
+    }
+    hiddenInput.blur(); scheduleDraw();
+  }
+  const _origStartTyping = startTyping;
+  startTyping = function(idx) { pushUndo(true); return _origStartTyping(idx); };
+  const _origStartTypingFb = startTypingFbName;
+  startTypingFbName = function() { pushUndo(true); return _origStartTypingFb(); };
+
+  hiddenInput.addEventListener('input', () => {
+    if (editingFbName) { FB_NAME = hiddenInput.value; FB_NAME_VISIBLE = true; scheduleDraw(); }
+    else if (editingIdx !== null && editingIdx < texts.length) { texts[editingIdx].text = hiddenInput.value; scheduleDraw(); }
+  });
+  hiddenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const cur = hiddenInput.value; const ss = hiddenInput.selectionStart, se = hiddenInput.selectionEnd;
+      hiddenInput.value = cur.substring(0, ss) + '\n' + cur.substring(se);
+      hiddenInput.setSelectionRange(ss + 1, ss + 1);
+      if (editingFbName) FB_NAME = hiddenInput.value;
+      else if (editingIdx !== null && editingIdx < texts.length) texts[editingIdx].text = hiddenInput.value;
+      scheduleDraw();
+    } else if (e.key === 'Escape') { e.preventDefault(); stopTyping(); }
+  });
+  hiddenInput.addEventListener('blur', () => {
+    if (editingIdx !== null || editingFbName) setTimeout(() => { if (document.activeElement !== hiddenInput) stopTyping(); }, 100);
+  });
+
+  menuEditBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); hideColorPopup();
+    if (menuTargetIsFbName || pressedFbName) { hideFloatingMenu(); startTypingFbName(); return; }
+    if (menuTargetIdx === null || menuTargetIdx === 'logo' || menuTargetIdx === 'logo-placeholder' || menuTargetIdx >= texts.length) return;
+    const idx = menuTargetIdx; hideFloatingMenu(); startTyping(idx);
+  });
+  menuColorBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (menuTargetIdx === 'logo' || menuTargetIdx === 'logo-placeholder') return;
+    floatingMenu.style.display = 'none'; floatingMenu.classList.remove('show'); showColorPopup();
+  });
+  menuDeleteBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); hideColorPopup();
+    if (menuTargetIsFbName || pressedFbName) { pushUndo(true); FB_NAME_VISIBLE = false; hideFloatingMenu(); scheduleDraw(); return; }
+    if (menuTargetIdx === 'logo') { pushUndo(true); logoImage = null; logoX = 10; logoY = 10; LOGO_SIZE = DEFAULT_LOGO_SIZE; pressedLogo = false; draggingLogo = false; hideFloatingMenu(); scheduleDraw(); return; }
+    if (menuTargetIdx === 'logo-placeholder') { pushUndo(true); logoPlaceholderVisible = false; logoX = 10; logoY = 10; LOGO_SIZE = DEFAULT_LOGO_SIZE; pressedLogo = false; hideFloatingMenu(); scheduleDraw(); return; }
+    if (menuTargetIdx === null || menuTargetIdx >= texts.length) return;
+    pushUndo(true); texts.splice(menuTargetIdx, 1); selectedIdx = null; dragging = null; hideFloatingMenu(); scheduleDraw();
+  });
+
+  const colorPickerModal = document.getElementById('colorPickerModal');
+  const cpHue = document.getElementById('cpHue');
+  const cpSat = document.getElementById('cpSat');
+  const cpVal = document.getElementById('cpVal');
+  const cpPreview = document.getElementById('cpPreview');
+  const cpHex = document.getElementById('cpHex');
+  const cpSetBtn = document.getElementById('cpSetBtn');
+  const cpCancelBtn = document.getElementById('cpCancelBtn');
+  const cpCloseBtn = document.getElementById('cpCloseBtn');
+  let cpTempColor = '#ffffff';
+
+  function hsvToRgb(h, s, v) {
+    s /= 100; v /= 100; const c = v * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1)); const m = v - c;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; }
+    else if (h < 180) { r = 0; g = c; b = x; } else if (h < 240) { r = 0; g = x; b = c; }
+    else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+    return { r: Math.round((r + m) * 255), g: Math.round((g + m) * 255), b: Math.round((b + m) * 255) };
+  }
+  function rgbToHsv(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b); const d = max - min;
+    let h = 0;
+    if (d !== 0) { if (max === r) h = ((g - b) / d) % 6; else if (max === g) h = (b - r) / d + 2; else h = (r - g) / d + 4; h *= 60; if (h < 0) h += 360; }
+    const s = max === 0 ? 0 : (d / max) * 100; const v = max * 100;
+    return { h: Math.round(h), s: Math.round(s), v: Math.round(v) };
+  }
+  function rgbToHex(r, g, b) { const toHex = (n) => n.toString(16).padStart(2, '0'); return '#' + toHex(r) + toHex(g) + toHex(b); }
+  function hexToRgb(hex) { hex = hex.replace('#', ''); if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    return { r: parseInt(hex.substring(0, 2), 16), g: parseInt(hex.substring(2, 4), 16), b: parseInt(hex.substring(4, 6), 16) }; }
+  function updateCpPreview() {
+    const h = parseFloat(cpHue.value), s = parseFloat(cpSat.value), v = parseFloat(cpVal.value);
+    const rgb = hsvToRgb(h, s, v); const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+    cpTempColor = hex; cpPreview.style.background = hex; cpHex.textContent = hex.toUpperCase();
+    const satRgb = hsvToRgb(h, 100, 100); const satHex = rgbToHex(satRgb.r, satRgb.g, satRgb.b);
+    cpSat.style.background = `linear-gradient(to right, #ffffff, ${satHex})`;
+    cpVal.style.background = `linear-gradient(to right, #000000, ${satHex})`;
+  }
+  function openColorPicker(initialHex) {
+    const rgb = hexToRgb(initialHex); const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    cpHue.value = hsv.h; cpSat.value = hsv.s; cpVal.value = hsv.v;
+    updateCpPreview(); colorPickerModal.classList.add('open');
+  }
+  function closeColorPicker() { colorPickerModal.classList.remove('open'); }
+  cpHue.addEventListener('input', updateCpPreview);
+  cpSat.addEventListener('input', updateCpPreview);
+  cpVal.addEventListener('input', updateCpPreview);
+  cpSetBtn.addEventListener('click', () => {
+    pushUndo(true);
+    if (menuTargetIsFbName) { FB_NAME_COLOR = cpTempColor; }
+    else {
+      const targetIdx = (menuTargetIdx !== null && menuTargetIdx !== 'logo' && menuTargetIdx !== 'logo-placeholder' && menuTargetIdx < texts.length)
+        ? menuTargetIdx : (selectedIdx !== null && selectedIdx < texts.length) ? selectedIdx : null;
+      if (targetIdx !== null) { texts[targetIdx].color = cpTempColor; selectedIdx = targetIdx; }
+      else textColor = cpTempColor;
+    }
+    scheduleDraw(); closeColorPicker();
+  });
+  cpCancelBtn.addEventListener('click', closeColorPicker);
+  cpCloseBtn.addEventListener('click', closeColorPicker);
+  colorPickerModal.addEventListener('click', (e) => { if (e.target === colorPickerModal) closeColorPicker(); });
+
+  let rafId = null;
+  function scheduleDraw() {
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => { rafId = null; draw(); saveSettings(); });
+  }
+
+  function drawRoundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, r);
+    else { c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+  }
+  function getFont(idx) { const t = texts[idx]; return t.isBold ? `900 ${t.size}px ${FONT_STACK}` : `600 ${t.size}px ${FONT_STACK}`; }
+  function wrapTextLines(text, maxWidth, font) {
+    ctx.font = font; const paragraphs = text.split('\n'); const result = [];
+    paragraphs.forEach(paragraph => {
+      if (paragraph.trim() === '') { result.push(''); return; }
+      const words = paragraph.split(/(\s+)/); let currentLine = '';
+      words.forEach(word => {
+        const testLine = currentLine + word; const testWidth = ctx.measureText(testLine).width;
+        if (testWidth <= maxWidth) currentLine = testLine;
+        else { if (currentLine.trim() !== '') result.push(currentLine.trim());
+          if (ctx.measureText(word).width > maxWidth) {
+            let charLine = '';
+            for (let i = 0; i < word.length; i++) {
+              const testChar = charLine + word[i];
+              if (ctx.measureText(testChar).width <= maxWidth) charLine = testChar;
+              else { if (charLine !== '') result.push(charLine); charLine = word[i]; }
+            }
+            currentLine = charLine;
+          } else currentLine = word;
+        }
+      });
+      if (currentLine.trim() !== '') result.push(currentLine.trim());
+    });
+    return result;
+  }
+  function getTextBounds(idx) {
+    const t = texts[idx];
+    if (!t || !t.text || t.text.trim() === '') return { x:0, y:0, w:0, h:0, cx:0, cy:0 };
+    const font = getFont(idx); ctx.font = font;
+    const maxLineWidth = canvas.width * 0.90;
+    const wrappedLines = wrapTextLines(t.text, maxLineWidth, font);
+    let maxW = 0;
+    wrappedLines.forEach(line => { const w = ctx.measureText(line).width; if (w > maxW) maxW = w; });
+    const w = maxW + 30; const h = t.size * 1.4 * wrappedLines.length;
+    const cx = t.x * canvas.width; const cy = t.y * canvas.height;
+    return { x: cx - w/2, y: cy - h/2, w, h, cx, cy };
+  }
+  function pointInBounds(px, py, b) { return px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h; }
+  function pointInRotatedBounds(px, py, b, rotationDeg) {
+    const cx = b.cx, cy = b.cy; const rad = -rotationDeg * Math.PI / 180;
+    const dx = px - cx, dy = py - cy;
+    const rx = dx * Math.cos(rad) - dy * Math.sin(rad) + cx;
+    const ry = dx * Math.sin(rad) + dy * Math.cos(rad) + cy;
+    return rx >= b.x && rx <= b.x + b.w && ry >= b.y && ry <= b.y + b.h;
+  }
+  function getFbNameBounds() {
+    if (!FB_NAME || FB_NAME.trim() === '' || !FB_NAME_VISIBLE) return { x:0, y:0, w:0, h:0, cx:0, cy:0, rightX:0 };
+    const fbFontSize = Math.round(canvas.height * FB_FONT_RATIO);
+    ctx.font = `900 ${fbFontSize}px ${FONT_STACK}`;
+    const metrics = ctx.measureText(FB_NAME); const textW = metrics.width;
+    const cy = canvas.height - Math.round(canvas.height * FB_CY_RATIO) + fbNameOffsetY;
+    const rightX = canvas.width - Math.round(canvas.width * FB_RIGHT_RATIO) - fbNameOffsetX;
+    const circleR = Math.round(canvas.height * FB_CIRCLE_R_RATIO);
+    const circleOffset = Math.round(canvas.width * FB_CIRCLE_OFFSET_RATIO);
+    const startX = rightX - textW;
+    const totalLeft = startX - circleOffset - circleR;
+    const totalW = rightX - totalLeft; const totalH = circleR * 2 + 10;
+    return { x: totalLeft - 5, y: cy - totalH/2, w: totalW + 10, h: totalH, cx: totalLeft + totalW/2, cy: cy, rightX: rightX };
+  }
+  function getLogobounds() {
+    if (!logoImage && !logoPlaceholderVisible) return { x:0, y:0, w:0, h:0, cx:0, cy:0 };
+    return { x: logoX, y: logoY, w: LOGO_SIZE, h: LOGO_SIZE, cx: logoX + LOGO_SIZE / 2, cy: logoY + LOGO_SIZE / 2 };
+  }
+  function getTouchAngle(e) {
+    if (e.touches && e.touches.length >= 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      return Math.atan2(dy, dx) * 180 / Math.PI;
+    }
+    return null;
+  }
+  function clampFbNamePosition() {
+    if (!FB_NAME || FB_NAME.trim() === '' || !FB_NAME_VISIBLE) return;
+    const fbFontSize = Math.round(canvas.height * FB_FONT_RATIO);
+    ctx.font = `900 ${fbFontSize}px ${FONT_STACK}`;
+    const textW = ctx.measureText(FB_NAME).width;
+    const circleR = Math.round(canvas.height * FB_CIRCLE_R_RATIO);
+    const circleOffset = Math.round(canvas.width * FB_CIRCLE_OFFSET_RATIO);
+    const totalWidth = circleOffset + circleR + textW;
+    const totalHeight = circleR * 2;
+    const defaultRightX = canvas.width - Math.round(canvas.width * FB_RIGHT_RATIO);
+    const defaultCy = canvas.height - Math.round(canvas.height * FB_CY_RATIO);
+    let currentRightX = defaultRightX - fbNameOffsetX;
+    let currentCy = defaultCy + fbNameOffsetY;
+    const leftEdge = currentRightX - totalWidth; const rightEdge = currentRightX;
+    const topEdge = currentCy - totalHeight / 2; const bottomEdge = currentCy + totalHeight / 2;
+    let shiftX = 0, shiftY = 0;
+    if (leftEdge < 0) shiftX = -leftEdge; else if (rightEdge > canvas.width) shiftX = canvas.width - rightEdge;
+    if (topEdge < 0) shiftY = -topEdge; else if (bottomEdge > canvas.height) shiftY = canvas.height - bottomEdge;
+    currentRightX += shiftX; currentCy += shiftY;
+    fbNameOffsetX = defaultRightX - currentRightX; fbNameOffsetY = currentCy - defaultCy;
+  }
+
+  function drawBackground() {
+    if (bgImage) { try { ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height); } catch(e) { console.warn('drawImage failed', e); } return; }
+    if (bgGradient && bgGradient.colors && bgGradient.colors.length >= 2) {
+      const angleRad = (bgGradient.angle || 135) * Math.PI / 180;
+      const x1 = canvas.width / 2 - Math.cos(angleRad) * canvas.width / 2;
+      const y1 = canvas.height / 2 - Math.sin(angleRad) * canvas.height / 2;
+      const x2 = canvas.width / 2 + Math.cos(angleRad) * canvas.width / 2;
+      const y2 = canvas.height / 2 + Math.sin(angleRad) * canvas.height / 2;
+      const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+      const n = bgGradient.colors.length;
+      bgGradient.colors.forEach((color, i) => { grad.addColorStop(i / (n - 1), color); });
+      ctx.fillStyle = grad;
+    } else ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function draw() {
+    drawBackground();
+    if (logoImage) {
+      ctx.drawImage(logoImage, logoX, logoY, LOGO_SIZE, LOGO_SIZE);
+      if (pressedLogo) { ctx.strokeStyle = 'rgba(56,239,125,0.95)'; ctx.lineWidth = 3; ctx.setLineDash([12, 8]); ctx.strokeRect(logoX - 3, logoY - 3, LOGO_SIZE + 6, LOGO_SIZE + 6); ctx.setLineDash([]); }
+    } else if (logoPlaceholderVisible) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2; ctx.setLineDash([8, 6]);
+      drawRoundRect(ctx, logoX, logoY, LOGO_SIZE, LOGO_SIZE, 16); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      const centerX = logoX + LOGO_SIZE / 2, centerY = logoY + LOGO_SIZE / 2;
+      const iconSize = 26;
+      ctx.fillRect(centerX - 3, centerY - iconSize/2, 6, iconSize);
+      ctx.fillRect(centerX - iconSize/2, centerY - 3, iconSize, 6);
+      ctx.restore();
+      if (pressedLogo) { ctx.save(); ctx.strokeStyle = 'rgba(56,239,125,0.95)'; ctx.lineWidth = 3; ctx.setLineDash([12, 8]); drawRoundRect(ctx, logoX - 3, logoY - 3, LOGO_SIZE + 6, LOGO_SIZE + 6, 18); ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
+    }
+    if (FB_NAME_VISIBLE && FB_NAME && FB_NAME.trim() !== '') {
+      const fbFontSize = Math.round(canvas.height * FB_FONT_RATIO);
+      const fFontSize = Math.round(canvas.height * FB_F_RATIO);
+      const cy = canvas.height - Math.round(canvas.height * FB_CY_RATIO) + fbNameOffsetY;
+      const rightX = canvas.width - Math.round(canvas.width * FB_RIGHT_RATIO) - fbNameOffsetX;
+      const circleR = Math.round(canvas.height * FB_CIRCLE_R_RATIO);
+      const circleOffset = Math.round(canvas.width * FB_CIRCLE_OFFSET_RATIO);
+      ctx.font = `900 ${fbFontSize}px ${FONT_STACK}`;
+      const metrics = ctx.measureText(FB_NAME); const textW = metrics.width;
+      const startX = rightX - textW;
+      ctx.fillStyle = FB_CIRCLE_COLOR;
+      ctx.beginPath(); ctx.arc(startX - circleOffset, cy, circleR, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = FB_ICON_COLOR;
+      ctx.font = `900 ${fFontSize}px 'Arial Black', ${FONT_STACK}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('f', startX - circleOffset, cy + 1);
+      ctx.font = `900 ${fbFontSize}px ${FONT_STACK}`;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 2; ctx.strokeStyle = FB_NAME_COLOR; ctx.lineJoin = 'round';
+      ctx.strokeText(FB_NAME, rightX, cy); ctx.fillStyle = FB_NAME_COLOR; ctx.fillText(FB_NAME, rightX, cy);
+    }
+    texts.forEach((t, idx) => {
+      if (t.text && t.text.trim() !== '') {
+        ctx.save();
+        const rot = t.rotation || 0; const cx = t.x * canvas.width, cy = t.y * canvas.height;
+        ctx.translate(cx, cy); ctx.rotate(rot * Math.PI / 180);
+        ctx.fillStyle = t.color || textColor; const font = getFont(idx);
+        ctx.font = font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.75)'; ctx.shadowBlur = t.isBold ? 12 : 8;
+        const maxLineWidth = canvas.width * 0.90;
+        const wrappedLines = wrapTextLines(t.text, maxLineWidth, font);
+        const lineHeight = t.size * 1.2;
+        const totalHeight = (wrappedLines.length - 1) * lineHeight;
+        const startY = -totalHeight / 2;
+        wrappedLines.forEach((line, li) => { if (line.trim() !== '') ctx.fillText(line, 0, startY + li * lineHeight); });
+        ctx.shadowBlur = 0; ctx.restore();
+      }
+    });
+    if (selectedIdx !== null && texts[selectedIdx] && texts[selectedIdx].text && texts[selectedIdx].text.trim() !== '') {
+      const b = getTextBounds(selectedIdx);
+      const rot = texts[selectedIdx].rotation || 0;
+      ctx.save(); ctx.translate(b.cx, b.cy); ctx.rotate(rot * Math.PI / 180);
+      const isEditing = (editingIdx === selectedIdx);
+      if (isEditing) { ctx.strokeStyle = 'rgba(56,239,125,1)'; ctx.lineWidth = 3; ctx.setLineDash([]); }
+      else { ctx.strokeStyle = 'rgba(56,239,125,0.95)'; ctx.lineWidth = 3; ctx.setLineDash([12, 8]); }
+      ctx.strokeRect(-b.w/2, -b.h/2, b.w, b.h); ctx.setLineDash([]);
+      if (isEditing) {
+        const wrapped = wrapTextLines(texts[selectedIdx].text, canvas.width * 0.90, getFont(selectedIdx));
+        const lastWrapped = wrapped[wrapped.length - 1] || '';
+        ctx.font = getFont(selectedIdx);
+        const lastWrappedW = ctx.measureText(lastWrapped).width;
+        const lineHeight = texts[selectedIdx].size * 1.2;
+        const totalHeight = (wrapped.length - 1) * lineHeight;
+        const startY = -totalHeight / 2;
+        const cursorY = startY + (wrapped.length - 1) * lineHeight;
+        const cursorX = lastWrappedW / 2;
+        const blink = Math.floor(Date.now() / 500) % 2;
+        if (blink) { ctx.fillStyle = 'rgba(56,239,125,1)'; ctx.fillRect(cursorX + 2, cursorY - texts[selectedIdx].size * 0.55, 3, texts[selectedIdx].size * 1.1); }
+        requestAnimationFrame(() => scheduleDraw());
+      }
+      ctx.restore();
+      if (rot !== 0 && isRotating) {
+        ctx.save(); ctx.font = `900 22px ${FONT_STACK}`; ctx.fillStyle = '#ffc107';
+        ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = 4;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.lineJoin = 'round';
+        ctx.strokeText(`${Math.round(rot)}°`, b.cx, b.cy - b.h/2 - 12);
+        ctx.fillText(`${Math.round(rot)}°`, b.cx, b.cy - b.h/2 - 12); ctx.restore();
+      }
+    }
+    if (pressedFbName && FB_NAME_VISIBLE) {
+      const fb = getFbNameBounds();
+      if (fb.w > 0) { ctx.strokeStyle = 'rgba(56,239,125,0.95)'; ctx.lineWidth = 3; ctx.setLineDash([12, 8]); ctx.strokeRect(fb.x, fb.y, fb.w, fb.h); ctx.setLineDash([]); }
+    }
+    if (editingFbName && FB_NAME_VISIBLE) {
+      const fb = getFbNameBounds();
+      if (fb.w > 0) { ctx.strokeStyle = 'rgba(56,239,125,1)'; ctx.lineWidth = 3; ctx.setLineDash([]); ctx.strokeRect(fb.x, fb.y, fb.w, fb.h); ctx.setLineDash([]);
+        const blink = Math.floor(Date.now() / 500) % 2;
+        if (blink) { ctx.fillStyle = 'rgba(56,239,125,1)'; ctx.fillRect(fb.x + fb.w - 8, fb.y + fb.h/2 - 10, 3, 20); }
+        requestAnimationFrame(() => scheduleDraw());
+      }
+    }
+  }
+
+  function getCanvasPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height) };
+  }
+  function pickTextAt(px, py) {
+    for (let i = texts.length - 1; i >= 0; i--) {
+      if (texts[i].text && texts[i].text.trim() !== '') {
+        const b = getTextBounds(i); const rot = texts[i].rotation || 0;
+        if (pointInRotatedBounds(px, py, b, rot)) return i;
+      }
+    }
+    return null;
+  }
+  function cancelPressTimer() { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } }
+
+  function startPress(idx, p, isFbName, isLogo) {
+    cancelPressTimer();
+    pressedTextIdx = (isFbName || isLogo) ? null : idx;
+    pressedFbName = !!isFbName; pressedLogo = !!isLogo; longPressTriggered = false;
+    pressStartPoint = { x: p.x, y: p.y };
+    pressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      if (isFbName) {
+        selectedIdx = null; dragging = null; draggingFbName = true;
+        const fb = getFbNameBounds();
+        fbNameDragOffset.x = p.x - fb.rightX; fbNameDragOffset.y = p.y - fb.cy;
+        scheduleDraw(); if (navigator.vibrate) navigator.vibrate(40);
+        showFloatingMenu(fb.cx, fb.y, null, true);
+      } else if (isLogo) {
+        selectedIdx = null; dragging = null; draggingLogo = true;
+        logoDragOffset.x = p.x - logoX; logoDragOffset.y = p.y - logoY;
+        scheduleDraw(); if (navigator.vibrate) navigator.vibrate(40);
+        showFloatingMenu(logoX + LOGO_SIZE/2, logoY, 'logo', false);
+      } else {
+        selectedIdx = idx; dragging = idx;
+        dragOffset.x = pressStartPoint.x - texts[idx].x * canvas.width;
+        dragOffset.y = pressStartPoint.y - texts[idx].y * canvas.height;
+        scheduleDraw(); if (navigator.vibrate) navigator.vibrate(40);
+        const bounds = getTextBounds(idx); showFloatingMenu(bounds.cx, bounds.y, idx, false);
+      }
+    }, LONG_PRESS_MS);
+  }
+  function startPressPlaceholder(p) {
+    cancelPressTimer(); pressedLogo = true; longPressTriggered = false;
+    pressStartPoint = { x: p.x, y: p.y };
+    pressTimer = setTimeout(() => {
+      longPressTriggered = true; if (navigator.vibrate) navigator.vibrate(40);
+      showFloatingMenu(logoX + LOGO_SIZE/2, logoY, 'logo-placeholder', false);
+    }, LONG_PRESS_MS);
+  }
+  function createNewTextAt(canvasX, canvasY) {
+    pushUndo(true);
+    const nx = canvasX / canvas.width, ny = canvasY / canvas.height;
+    const newColor = getRandomPaletteColor();
+    const newText = { text: '', size: Math.round(canvas.height * 0.097),
+      x: Math.max(0.05, Math.min(0.95, nx)), y: Math.max(0.05, Math.min(0.95, ny)),
+      isBold: true, rotation: 0, color: newColor };
+    texts.push(newText); const idx = texts.length - 1;
+    selectedIdx = idx; scheduleDraw(); setTimeout(() => startTyping(idx), 50);
+  }
+  function clampTextPosition(idx) {
+    const t = texts[idx];
+    if (!t || !t.text || t.text.trim() === '') return;
+    const font = getFont(idx); ctx.font = font;
+    const maxLineWidth = canvas.width * 0.95;
+    const wrappedLines = wrapTextLines(t.text, maxLineWidth, font);
+    let maxW = 0;
+    wrappedLines.forEach(line => { const w = ctx.measureText(line).width; if (w > maxW) maxW = w; });
+    const textW = maxW; const textH = t.size * 1.2 * wrappedLines.length;
+    const rot = t.rotation || 0;
+    const cosR = Math.abs(Math.cos(rot * Math.PI / 180)); const sinR = Math.abs(Math.sin(rot * Math.PI / 180));
+    const effectiveW = textW * cosR + textH * sinR; const effectiveH = textW * sinR + textH * cosR;
+    const padding = 5;
+    const minCx = padding + effectiveW / 2; const maxCx = canvas.width - padding - effectiveW / 2;
+    const minCy = padding + effectiveH / 2; const maxCy = canvas.height - padding - effectiveH / 2;
+    let cx = t.x * canvas.width, cy = t.y * canvas.height;
+    if (effectiveW > canvas.width - 2 * padding) cx = canvas.width / 2;
+    else cx = Math.max(minCx, Math.min(maxCx, cx));
+    if (effectiveH > canvas.height - 2 * padding) cy = canvas.height / 2;
+    else cy = Math.max(minCy, Math.min(maxCy, cy));
+    t.x = cx / canvas.width; t.y = cy / canvas.height;
+  }
+
+  let canvasMouseDownPoint = null; let canvasMouseDownOnEmpty = false;
+  canvas.addEventListener('mousedown', (e) => {
+    if (editingIdx !== null || editingFbName) { stopTyping(); return; }
+    if (colorPopup.classList.contains('show')) hideColorPopup();
+    const p = getCanvasPoint(e); const logoB = getLogobounds();
+    if ((logoImage || logoPlaceholderVisible) && pointInBounds(p.x, p.y, logoB)) {
+      canvasMouseDownPoint = p; canvasMouseDownOnEmpty = false;
+      if (logoImage) startPress(null, p, false, true); else startPressPlaceholder(p);
+      return;
+    }
+    const fbBounds = getFbNameBounds();
+    const onFb = fbBounds.w > 0 && pointInBounds(p.x, p.y, fbBounds);
+    const picked = onFb ? null : pickTextAt(p.x, p.y);
+    canvasMouseDownPoint = p; canvasMouseDownOnEmpty = !onFb && picked === null;
+    if (onFb) { startPress(null, p, true, false); return; }
+    if (picked !== null) startPress(picked, p, false, false);
+    else { cancelPressTimer(); hideFloatingMenu(); selectedIdx = null; scheduleDraw(); }
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (dragging === null && !draggingLogo && !draggingFbName) return;
+    const p = getCanvasPoint(e);
+    if (!longPressTriggered && pressTimer) {
+      const dx = p.x - pressStartPoint.x, dy = p.y - pressStartPoint.y;
+      if (Math.sqrt(dx*dx + dy*dy) > 15) cancelPressTimer();
+    }
+    if (longPressTriggered) {
+      if (draggingFbName) {
+        const newRightX = p.x - fbNameDragOffset.x; const newCy = p.y - fbNameDragOffset.y;
+        const defaultRightX = canvas.width - Math.round(canvas.width * FB_RIGHT_RATIO);
+        const defaultCy = canvas.height - Math.round(canvas.height * FB_CY_RATIO);
+        fbNameOffsetX = defaultRightX - newRightX; fbNameOffsetY = newCy - defaultCy;
+        clampFbNamePosition(); scheduleDraw();
+      } else if (draggingLogo && logoImage) {
+        let newX = p.x - logoDragOffset.x, newY = p.y - logoDragOffset.y;
+        newX = Math.max(0, Math.min(canvas.width - LOGO_SIZE, newX));
+        newY = Math.max(0, Math.min(canvas.height - LOGO_SIZE, newY));
+        logoX = newX; logoY = newY; scheduleDraw();
+      } else if (dragging !== null) {
+        texts[dragging].x = (p.x - dragOffset.x) / canvas.width;
+        texts[dragging].y = (p.y - dragOffset.y) / canvas.height;
+        clampTextPosition(dragging); scheduleDraw();
+      }
+    }
+  });
+  window.addEventListener('mouseup', (e) => {
+    const wasLongPress = longPressTriggered; cancelPressTimer();
+    if (dragging !== null) dragging = null;
+    if (draggingLogo) draggingLogo = false;
+    if (draggingFbName) draggingFbName = false;
+    if (pressedLogo && !logoImage && !wasLongPress && logoPlaceholderVisible) {
+      const logoB = getLogobounds(); const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+      if (pointInBounds(mx, my, logoB)) document.getElementById('logoUpload').click();
+    }
+    if (canvasMouseDownOnEmpty && canvasMouseDownPoint && !editingIdx && !editingFbName) {
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+      const dx = mx - canvasMouseDownPoint.x, dy = my - canvasMouseDownPoint.y;
+      if (Math.sqrt(dx*dx + dy*dy) < 15) { hideFloatingMenu(); createNewTextAt(canvasMouseDownPoint.x, canvasMouseDownPoint.y); }
+    }
+    canvasMouseDownPoint = null; canvasMouseDownOnEmpty = false;
+    pressedTextIdx = null; pressedFbName = false; pressedLogo = false;
+    longPressTriggered = false; scheduleDraw();
+  });
+
+  let initialPinchDistance = null; let initialPinchAngle = null;
+  let baseTextSizes = []; let initialRotation = 0, rotatingIdx = null, isRotating = false;
+  function getPinchDistance(e) {
+    if (e.touches && e.touches.length >= 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+    return null;
+  }
+  let touchDownPoint = null, touchDownOnEmpty = false;
+
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      cancelPressTimer(); hideFloatingMenu(); hideColorPopup();
+      if (editingIdx !== null || editingFbName) stopTyping();
+      pushUndo(true);
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const rect = canvas.getBoundingClientRect();
+      const canvasMidX = (midX - rect.left) * (canvas.width / rect.width);
+      const canvasMidY = (midY - rect.top) * (canvas.height / rect.height);
+      let targetIdx = pickTextAt(canvasMidX, canvasMidY);
+      if (targetIdx === null && selectedIdx !== null && typeof selectedIdx === 'number' && selectedIdx >= 0 && selectedIdx < texts.length) targetIdx = selectedIdx;
+      initialPinchDistance = getPinchDistance(e);
+      initialPinchAngle = getTouchAngle(e);
+      baseTextSizes = texts.map(t => t.size);
+      if (targetIdx !== null && targetIdx >= 0 && targetIdx < texts.length) {
+        selectedIdx = targetIdx; rotatingIdx = targetIdx;
+        initialRotation = texts[targetIdx].rotation || 0; isRotating = false;
+      } else { rotatingIdx = null; selectedIdx = null; }
+      touchDownPoint = null; touchDownOnEmpty = false;
+      return;
+    }
+    if (editingIdx !== null || editingFbName) return;
+    if (colorPopup.classList.contains('show')) hideColorPopup();
+    const p = getCanvasPoint(e); const logoB = getLogobounds();
+    if ((logoImage || logoPlaceholderVisible) && pointInBounds(p.x, p.y, logoB)) {
+      touchDownPoint = p; touchDownOnEmpty = false; e.preventDefault();
+      if (logoImage) startPress(null, p, false, true); else startPressPlaceholder(p);
+      return;
+    }
+    const fbBounds = getFbNameBounds();
+    if (fbBounds.w > 0 && pointInBounds(p.x, p.y, fbBounds)) {
+      touchDownPoint = p; touchDownOnEmpty = false; e.preventDefault();
+      startPress(null, p, true, false); return;
+    }
+    const picked = pickTextAt(p.x, p.y);
+    if (picked !== null) {
+      touchDownPoint = p; touchDownOnEmpty = false; e.preventDefault();
+      startPress(picked, p, false, false);
+    } else {
+      touchDownPoint = p; touchDownOnEmpty = true;
+      cancelPressTimer(); hideFloatingMenu(); selectedIdx = null; scheduleDraw();
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && initialPinchDistance !== null) {
+      e.preventDefault();
+      const isTextTarget = ((selectedIdx !== null && typeof selectedIdx === 'number' && selectedIdx >= 0 && selectedIdx < texts.length) || (rotatingIdx !== null && typeof rotatingIdx === 'number' && rotatingIdx >= 0 && rotatingIdx < texts.length));
+      const currentAngle = getTouchAngle(e); let angleDiff = 0;
+      if (currentAngle !== null && initialPinchAngle !== null) {
+        angleDiff = currentAngle - initialPinchAngle;
+        while (angleDiff > 180) angleDiff -= 360;
+        while (angleDiff < -180) angleDiff += 360;
+      }
+      if (isTextTarget && rotatingIdx !== null && Math.abs(angleDiff) > 5) {
+        isRotating = true;
+        let newRot = initialRotation + angleDiff;
+        while (newRot < 0) newRot += 360;
+        while (newRot >= 360) newRot -= 360;
+        texts[rotatingIdx].rotation = newRot; selectedIdx = rotatingIdx;
+        clampTextPosition(rotatingIdx); scheduleDraw(); return;
+      }
+      if (isTextTarget && rotatingIdx !== null) {
+        const currentDist = getPinchDistance(e);
+        if (currentDist) {
+          const scaleFactor = currentDist / initialPinchDistance;
+          const clampedScale = Math.max(0.3, Math.min(5, scaleFactor));
+          const targetIdx = rotatingIdx;
+          const base = baseTextSizes[targetIdx] || texts[targetIdx].size;
+          texts[targetIdx].size = Math.max(8, Math.min(500, Math.round(base * clampedScale)));
+          selectedIdx = targetIdx; clampTextPosition(targetIdx); scheduleDraw();
+        }
+      }
+      return;
+    }
+    const p = getCanvasPoint(e);
+    if (draggingFbName && longPressTriggered) {
+      e.preventDefault();
+      const newRightX = p.x - fbNameDragOffset.x; const newCy = p.y - fbNameDragOffset.y;
+      const defaultRightX = canvas.width - Math.round(canvas.width * FB_RIGHT_RATIO);
+      const defaultCy = canvas.height - Math.round(canvas.height * FB_CY_RATIO);
+      fbNameOffsetX = defaultRightX - newRightX; fbNameOffsetY = newCy - defaultCy;
+      clampFbNamePosition(); scheduleDraw();
+    } else if (draggingLogo && longPressTriggered && logoImage) {
+      e.preventDefault();
+      let newX = p.x - logoDragOffset.x, newY = p.y - logoDragOffset.y;
+      newX = Math.max(0, Math.min(canvas.width - LOGO_SIZE, newX));
+      newY = Math.max(0, Math.min(canvas.height - LOGO_SIZE, newY));
+      logoX = newX; logoY = newY; scheduleDraw();
+    } else if (dragging !== null && longPressTriggered) {
+      e.preventDefault();
+      texts[dragging].x = (p.x - dragOffset.x) / canvas.width;
+      texts[dragging].y = (p.y - dragOffset.y) / canvas.height;
+      clampTextPosition(dragging); scheduleDraw();
+    } else if (!longPressTriggered && pressTimer) {
+      const dx = p.x - pressStartPoint.x, dy = p.y - pressStartPoint.y;
+      if (Math.sqrt(dx*dx + dy*dy) > 15) cancelPressTimer();
+    }
+    if (touchDownPoint) {
+      const dx = p.x - touchDownPoint.x, dy = p.y - touchDownPoint.y;
+      if (Math.sqrt(dx*dx + dy*dy) > 15) touchDownOnEmpty = false;
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', (e) => {
+    const wasLongPress = longPressTriggered;
+    if (e.touches.length < 2) { initialPinchDistance = null; initialPinchAngle = null; isRotating = false; rotatingIdx = null; }
+    cancelPressTimer();
+    if (dragging !== null) { clampTextPosition(dragging); dragging = null; }
+    if (draggingLogo) draggingLogo = false;
+    if (draggingFbName) draggingFbName = false;
+    if (pressedLogo && !logoImage && !wasLongPress && logoPlaceholderVisible) document.getElementById('logoUpload').click();
+    if (touchDownOnEmpty && touchDownPoint && !editingIdx && !editingFbName) { hideFloatingMenu(); createNewTextAt(touchDownPoint.x, touchDownPoint.y); }
+    touchDownPoint = null; touchDownOnEmpty = false;
+    pressedTextIdx = null; pressedFbName = false; pressedLogo = false;
+    longPressTriggered = false; scheduleDraw();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (floatingMenu.classList.contains('show') && !floatingMenu.contains(e.target) && !canvas.contains(e.target) && !colorPopup.contains(e.target)) {
+      hideFloatingMenu(); selectedIdx = null; pressedFbName = false; pressedLogo = false; scheduleDraw();
+    }
+    if (colorPopup.classList.contains('show') && !colorPopup.contains(e.target) && !canvas.contains(e.target) && !floatingMenu.contains(e.target)) hideColorPopup();
+  });
+  document.addEventListener('touchstart', (e) => {
+    if (floatingMenu.classList.contains('show') && !floatingMenu.contains(e.target) && !canvas.contains(e.target) && !colorPopup.contains(e.target)) {
+      hideFloatingMenu(); selectedIdx = null; pressedFbName = false; pressedLogo = false; scheduleDraw();
+    }
+    if (colorPopup.classList.contains('show') && !colorPopup.contains(e.target) && !canvas.contains(e.target) && !floatingMenu.contains(e.target)) hideColorPopup();
+  }, { passive: true });
+
+  /* ================= GALLERY ================= */
+  function createColorCard(i, color) {
+    const card = document.createElement('div');
+    card.className = 'thumb-card';
+    card.setAttribute('data-type', 'color'); card.setAttribute('data-color', color);
+    card.setAttribute('data-text', 'COLOR ' + color.toUpperCase()); card.setAttribute('data-sub', 'Background Color');
+    card.innerHTML = `<div class="thumb-preview" style="background-color:${color};"><div class="card-logo-badge"></div><span class="thumb-number"></span></div><div class="color-name-row"><span class="color-preview-dot" style="background-color:${color};"></span><span class="color-name-text">${color.toUpperCase()}</span></div>`;
+    return card;
+  }
+  function createGradientCard(i, preset) {
+    const card = document.createElement('div');
+    card.className = 'thumb-card';
+    card.setAttribute('data-type', 'color'); card.setAttribute('data-gradient', JSON.stringify(preset));
+    card.setAttribute('data-text', 'GRADIENT ' + preset.name.toUpperCase()); card.setAttribute('data-sub', preset.colors.length + '-Color Gradient');
+    const cssGrad = `linear-gradient(${preset.angle || 135}deg, ${preset.colors.join(', ')})`;
+    const dotsHtml = preset.colors.map(c => `<span class="color-preview-dot" style="background-color:${c};"></span>`).join('');
+    card.innerHTML = `<div class="thumb-preview" style="background:${cssGrad};"><div class="card-logo-badge"></div><span class="thumb-number"></span></div><div class="color-name-row">${dotsHtml}</div><div class="color-name-text" style="margin-top:2px;">${preset.name}</div>`;
+    return card;
+  }
+  /* ✅ FIX: ছবি কার্ডে fallback যোগ */
+  function createImageCard(i, imgId) {
+    const card = document.createElement('div');
+    card.className = 'thumb-card';
+    card.setAttribute('data-type', 'image');
+    const primaryUrl  = makeUrl(imgId, 1280);
+    const thumbUrl    = makeUrl(imgId, 400);
+    const fallbackUrl = makeFallbackUrl(imgId, 1280, 720);
+    card.setAttribute('data-img', primaryUrl);
+    card.setAttribute('data-fallback-img', fallbackUrl);
+    card.setAttribute('data-text', 'PHOTO ' + i);
+    card.setAttribute('data-sub', 'Collection');
+    card.innerHTML = `<div class="thumb-preview"><div class="card-logo-badge"></div><span class="thumb-number"></span></div><div class="thumb-name">Photo <span class="thumb-name-number"></span></div>`;
+    const preview = card.querySelector('.thumb-preview');
+    const testImg = new Image();
+    testImg.crossOrigin = 'anonymous';
+    testImg.onload  = () => { preview.style.backgroundImage = `url('${thumbUrl}')`; };
+    testImg.onerror = () => {
+      preview.style.backgroundImage = `url('${fallbackUrl}')`;
+      card.setAttribute('data-img', fallbackUrl);
+    };
+    testImg.src = thumbUrl;
+    return card;
+  }
+  function createUserCard(i, dataUrl, text, sub, dbId) {
+    const card = document.createElement('div');
+    card.className = 'thumb-card';
+    card.setAttribute('data-type', 'image'); card.setAttribute('data-custom', 'true');
+    card.setAttribute('data-img', dataUrl);
+    card.setAttribute('data-text', text || 'CUSTOM IMAGE ' + i); card.setAttribute('data-sub', sub || 'User Uploaded');
+    if (dbId !== undefined && dbId !== null) card.setAttribute('data-db-id', String(dbId));
+    card.innerHTML = `<div class="thumb-preview" style="background-image:url('${dataUrl}');"><div class="card-logo-badge"></div><span class="thumb-number"></span><button class="card-delete-btn" type="button" title="Delete"><i class="fas fa-times"></i></button></div><div class="thumb-name">Custom <span class="thumb-name-number"></span></div>`;
+    return card;
+  }
+  function loadAllThumbnails() {
+    const grid = document.getElementById('galleryGrid');
+    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    userCards.forEach((uc, idx) => frag.appendChild(createUserCard(idx + 1, uc.thumb || uc.imgDataUrl, uc.text, uc.sub, uc.id)));
+    const usedColors = new Set(); let colorCardCount = 0;
+    for (let i = 0; i < shuffledColors.length; i++) {
+      const colorKey = shuffledColors[i].toLowerCase().trim();
+      if (usedColors.has(colorKey)) continue;
+      usedColors.add(colorKey); colorCardCount++;
+      frag.appendChild(createColorCard(colorCardCount, shuffledColors[i]));
+    }
+    let gradientCount = 0;
+    shuffledGradients.forEach(preset => { gradientCount++; frag.appendChild(createGradientCard(gradientCount, preset)); });
+    const usedPhotos = new Set(); let imageCardCount = 0;
+    for (let i = 0; i < sampleIds.length; i++) {
+      const photoKey = sampleIds[i].trim();
+      if (usedPhotos.has(photoKey)) continue;
+      usedPhotos.add(photoKey); imageCardCount++;
+      frag.appendChild(createImageCard(imageCardCount, sampleIds[i]));
+    }
+    grid.appendChild(frag);
+  }
+  function updateFilterCounts() {
+    const allCards = document.querySelectorAll('.thumb-card');
+    const customCards = document.querySelectorAll('.thumb-card[data-custom="true"]');
+    const imageCards = document.querySelectorAll('.thumb-card[data-type="image"]:not([data-custom="true"])');
+    const colorCards = document.querySelectorAll('.thumb-card[data-type="color"]');
+    document.getElementById('countAll').textContent = allCards.length;
+    document.getElementById('countCustom').textContent = customCards.length;
+    document.getElementById('countImage').textContent = imageCards.length;
+    document.getElementById('countColor').textContent = colorCards.length;
+  }
+  function renumberVisibleCards() {
+    const allCards = document.querySelectorAll('.thumb-card');
+    let counter = 0;
+    allCards.forEach(card => {
+      if (card.style.display !== 'none') {
+        counter++;
+        const numSpan = card.querySelector('.thumb-number');
+        if (numSpan) numSpan.textContent = counter;
+        const nameNum = card.querySelector('.thumb-name-number');
+        if (nameNum) nameNum.textContent = counter;
+      }
+    });
+  }
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.getAttribute('data-filter');
+      document.querySelectorAll('.thumb-card').forEach(card => {
+        const isCustom = card.getAttribute('data-custom') === 'true';
+        const cardType = card.getAttribute('data-type');
+        let show = false;
+        if (filter === 'all') show = true;
+        else if (filter === 'custom') show = isCustom;
+        else if (filter === 'image') show = (cardType === 'image' && !isCustom);
+        else if (filter === 'color') show = (cardType === 'color');
+        card.style.display = show ? 'block' : 'none';
+      });
+      renumberVisibleCards();
+    });
+  });
+
+  const galleryGrid = document.getElementById('galleryGrid');
+  /* ✅ FIX: loadBgImage fallback chain সহ */
+  function loadBgImage(url, fallbackColor, fallbackUrl) {
+    const tryList = [url];
+    if (fallbackUrl) tryList.push(fallbackUrl);
+    tryList.push('https://picsum.photos/seed/' + Date.now() + '/1280/720');
+    let i = 0;
+    const tryNext = () => {
+      if (i >= tryList.length) {
+        bgImage = null;
+        bgColor = fallbackColor || '#1e3c72';
+        scheduleDraw();
+        showToast('ছবি লোড হয়নি — ইন্টারনেট চেক করুন', 'error');
+        return;
+      }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = () => { bgImage = img; bgGradient = null; scheduleDraw(); };
+      img.onerror = () => { i++; tryNext(); };
+      img.src = tryList[i];
+    };
+    tryNext();
+  }
+  galleryGrid.addEventListener('click', async (e) => {
+    const deleteBtn = e.target.closest('.card-delete-btn');
+    if (deleteBtn) {
+      e.preventDefault(); e.stopPropagation();
+      const card = deleteBtn.closest('.thumb-card');
+      if (!card) return;
+      const dbId = card.getAttribute('data-db-id');
+      const idx = Array.from(document.querySelectorAll('.thumb-card[data-custom="true"]')).indexOf(card);
+      if (idx >= 0) userCards.splice(idx, 1);
+      else {
+        const uidx = userCards.findIndex(u => String(u.id) === String(dbId));
+        if (uidx >= 0) userCards.splice(uidx, 1);
+      }
+      if (dbId) await deletePhotoFromDB(Number(dbId));
+      card.remove(); saveUserCards(); updateFilterCounts(); renumberVisibleCards();
+      showToast('🗑️ ছবি মুছে ফেলা হয়েছে', 'success', 1500);
+      return;
+    }
+    const card = e.target.closest('.thumb-card');
+    if (!card) return;
+    pushUndo(true);
+    const colorAttr = card.getAttribute('data-color');
+    const gradientAttr = card.getAttribute('data-gradient');
+    const imgSrc = card.getAttribute('data-img');
+    const fallbackImg = card.getAttribute('data-fallback-img') || '';
+    const newText = card.getAttribute('data-text');
+    const newSub = card.getAttribute('data-sub');
+    if (newText && texts[0]) { texts[0].text = newText + (newSub ? '\n' + newSub : ''); clampTextPosition(0); }
+    if (texts[1]) texts[1].text = '';
+    if (gradientAttr) {
+      try {
+        const preset = JSON.parse(gradientAttr);
+        bgImage = null;
+        bgGradient = { colors: preset.colors.slice(), angle: (typeof preset.angle === 'number') ? preset.angle : 135 };
+        scheduleDraw(); return;
+      } catch(err) { console.warn('Gradient parse failed', err); }
+    }
+    if (colorAttr) { bgImage = null; bgGradient = null; bgColor = colorAttr; scheduleDraw(); return; }
+    if (imgSrc) loadBgImage(imgSrc, colorAttr || '#1e3c72', fallbackImg);
+    scheduleDraw();
+  });
+
+  document.getElementById('bulkThumbInput').addEventListener('change', async (e) => {
+    const files = e.target.files;
+    if (!files || !files.length) return;
+    const total = files.length; let processed = 0;
+    for (const file of Array.from(files)) {
+      try {
+        const fullDataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.onerror = reject; reader.readAsDataURL(file);
+        });
+        const thumbDataUrl = await makeThumbnail(fullDataUrl, 400, 225, 0.75);
+        const customNum = userCards.length + 1;
+        const cardData = { imgDataUrl: fullDataUrl, thumb: thumbDataUrl, text: 'CUSTOM IMAGE ' + customNum, sub: 'User Uploaded' };
+        const dbId = await addPhotoToDB(cardData);
+        const savedCard = { id: dbId, imgDataUrl: fullDataUrl, thumb: thumbDataUrl, text: cardData.text, sub: cardData.sub };
+        userCards.push(savedCard);
+        const card = createUserCard(customNum, thumbDataUrl, cardData.text, cardData.sub, dbId);
+        galleryGrid.prepend(card); updateFilterCounts(); renumberVisibleCards();
+        processed++;
+      } catch (err) { console.warn('Photo add failed', err); }
+    }
+    e.target.value = '';
+    const saved = saveUserCards();
+    if (processed > 0 && saved) showToast('✅ ' + processed + ' টি ছবি সেভ হয়েছে', 'success');
+    else if (processed > 0 && !saved) showToast('⚠️ ছবি যোগ হয়েছে কিন্তু সেভ হয়নি', 'error', 3000);
+    else showToast('❌ ছবি যোগ করা যায়নি', 'error');
+  });
+
+  document.getElementById('logoUpload').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        pushUndo(true); logoImage = img; logoPlaceholderVisible = true; scheduleDraw();
+        document.querySelectorAll('.thumb-card').forEach(card => {
+          card.classList.add('has-logo');
+          const badge = card.querySelector('.card-logo-badge');
+          if (badge) badge.style.backgroundImage = `url('${ev.target.result}')`;
+        });
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file); e.target.value = '';
+  });
+
+  const saveOptionsModal = document.getElementById('saveOptionsModal');
+  const soCloseBtn = document.getElementById('soCloseBtn');
+  const soSaveNowBtn = document.getElementById('soSaveNowBtn');
+  const soQualityWrap = document.getElementById('soQualityWrap');
+  const soQualitySlider = document.getElementById('soQualitySlider');
+  const soQualityValue = document.getElementById('soQualityValue');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const shareBtn = document.getElementById('shareBtn');
+
+  let selectedFormat = 'png'; let selectedQuality = 0.92;
+  let lastSavedBlob = null; let lastSavedFileName = '';
+
+  function updateQualitySliderTrack() {
+    const pct = parseFloat(soQualitySlider.value);
+    soQualitySlider.style.background = `linear-gradient(to right, #38ef7d 0%, #38ef7d ${pct}%, #e2e8f0 ${pct}%, #e2e8f0 100%)`;
+  }
+  document.querySelectorAll('.so-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.so-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      selectedFormat = opt.getAttribute('data-format');
+      if (selectedFormat === 'png') soQualityWrap.classList.add('hidden');
+      else soQualityWrap.classList.remove('hidden');
+    });
+  });
+  soQualitySlider.addEventListener('input', () => {
+    const v = parseInt(soQualitySlider.value, 10);
+    soQualityValue.textContent = v + '%'; selectedQuality = v / 100; updateQualitySliderTrack();
+  });
+  updateQualitySliderTrack();
+  function openSaveOptions() { saveOptionsModal.classList.add('open'); }
+  function closeSaveOptions() { saveOptionsModal.classList.remove('open'); }
+  soCloseBtn.addEventListener('click', closeSaveOptions);
+  saveOptionsModal.addEventListener('click', (e) => { if (e.target === saveOptionsModal) closeSaveOptions(); });
+  downloadBtn.addEventListener('click', () => openSaveOptions());
+
+  function getMimeType(fmt) { if (fmt === 'jpeg') return 'image/jpeg'; if (fmt === 'webp') return 'image/webp'; return 'image/png'; }
+  function getExt(fmt) { if (fmt === 'jpeg') return 'jpg'; if (fmt === 'webp') return 'webp'; return 'png'; }
+
+  soSaveNowBtn.addEventListener('click', () => {
+    soSaveNowBtn.disabled = true;
+    soSaveNowBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    if (editingIdx !== null || editingFbName) stopTyping();
+    hideFloatingMenu(); hideColorPopup();
+    const prevSelected = selectedIdx;
+    selectedIdx = null; isRotating = false; pressedLogo = false; draw();
+    setTimeout(async () => {
+      const mime = getMimeType(selectedFormat);
+      const quality = selectedFormat === 'png' ? undefined : selectedQuality;
+      canvas.toBlob(async (blob) => {
+        selectedIdx = prevSelected; scheduleDraw();
+        soSaveNowBtn.disabled = false;
+        soSaveNowBtn.innerHTML = '<i class="fas fa-download"></i> Save Now';
+        if (!blob) { showToast('❌ সেভ করা যায়নি! আবার চেষ্টা করুন', 'error', 3500); return; }
+        lastSavedBlob = blob;
+        lastSavedFileName = 'FastiThum_' + Date.now() + '.' + getExt(selectedFormat);
+        const result = await saveImage(blob, lastSavedFileName);
+        closeSaveOptions();
+        if (result.ok) {
+          if (result.where === 'gallery') showToast('✅ গ্যালারিতে সেভ হয়েছে', 'success', 2200);
+          else if (result.where === 'downloads') showToast('✅ Downloads এ সেভ হয়েছে', 'success', 2200);
+          else if (result.where === 'root') showToast('✅ ফোনে সেভ হয়েছে', 'success', 2200);
+          else showToast('✅ সেভ হয়েছে', 'success', 2200);
+        } else showToast('❌ সেভ ব্যর্থ: ' + (result.err || 'Unknown'), 'error', 3500);
+      }, mime, quality);
+    }, 100);
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    if (editingIdx !== null || editingFbName) stopTyping();
+    hideFloatingMenu(); hideColorPopup();
+    const prevSelected = selectedIdx;
+    selectedIdx = null; isRotating = false; pressedLogo = false; draw();
+    await new Promise(resolve => {
+      setTimeout(() => {
+        canvas.toBlob((blob) => {
+          selectedIdx = prevSelected; scheduleDraw();
+          if (blob) { lastSavedBlob = blob; lastSavedFileName = 'FastiThum_' + Date.now() + '.png'; }
+          resolve();
+        }, 'image/png');
+      }, 100);
+    });
+    if (!lastSavedBlob) { showToast('❌ শেয়ার করা যায়নি', 'error', 2000); return; }
+    if (window.plugins && window.plugins.socialsharing) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = reader.result;
+        window.plugins.socialsharing.share('আমার থাম্বনেইল', null, base64Data, null,
+          () => showToast('✅ শেয়ার সম্পন্ন', 'success', 1800),
+          (err) => { console.warn('Share failed', err); showToast('শেয়ার বাতিল', 'info', 1500); });
+      };
+      reader.readAsDataURL(lastSavedBlob);
+      return;
+    }
+    try {
+      const file = new File([lastSavedBlob], lastSavedFileName, { type: lastSavedBlob.type || 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Thumbnail', text: 'আমার থাম্বনেইল' });
+        showToast('✅ শেয়ার সম্পন্ন', 'success', 1800);
+        return;
+      }
+    } catch (err) { if (err && err.name === 'AbortError') return; }
+    showToast('শেয়ার সাপোর্ট নেই', 'info', 2000);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    Object.keys(localStorage).forEach(k => { if (k.startsWith('fastiThum') || k.startsWith('thumbMaker')) localStorage.removeItem(k); });
+    await clearUserPhotosDB();
+    undoStack = []; updateUndoBtn();
+    bgImage = null; logoImage = null; logoPlaceholderVisible = true;
+    logoX = 10; logoY = 10; LOGO_SIZE = DEFAULT_LOGO_SIZE;
+    bgColor = '#1e3c72'; textColor = '#ffffff'; bgGradient = null;
+    FB_NAME = '하산'; FB_NAME_VISIBLE = true; FB_NAME_COLOR = '#1877f2';
+    fbNameOffsetX = 0; fbNameOffsetY = 0;
+    texts = [
+      { text: 'নতুন ভিডিও', size: 70, x: 0.5, y: 0.40, isBold: true, rotation: 0, color: '#ffffff' },
+      { text: 'দেখুন এখনই', size: 32, x: 0.5, y: 0.60, isBold: false, rotation: 0, color: '#ffffff' }
+    ];
+    userCards = [];
+    selectedIdx = null; editingIdx = null; editingFbName = false;
+    dragging = null; draggingLogo = false; draggingFbName = false;
+    pressedTextIdx = null; pressedFbName = false; pressedLogo = false;
+    longPressTriggered = false; isRotating = false; rotatingIdx = null;
+    menuTargetIsFbName = false;
+    cancelPressTimer(); hideFloatingMenu(); hideColorPopup(); closeSaveOptions();
+    canvas.width = 1280; canvas.height = 720;
+    lastSavedBlob = null; lastSavedFileName = '';
+    loadAllThumbnails(); updateFilterCounts(); renumberVisibleCards(); scheduleDraw();
+  });
+
+  document.querySelectorAll('.bottom-options .option-card').forEach(card => {
+    card.addEventListener('click', () => {
+      pushUndo(true);
+      const sizeType = card.getAttribute('data-size');
+      if (sizeType === 'facebook-cover') { canvas.width = 1200; canvas.height = 630; }
+      else if (sizeType === 'youtube-thumb') { canvas.width = 1280; canvas.height = 720; }
+      else if (sizeType === 'square-logo') { canvas.width = 1000; canvas.height = 1000; }
+      else if (sizeType === 'insta-post') { canvas.width = 1080; canvas.height = 1080; }
+      texts.forEach((t, i) => clampTextPosition(i));
+      clampFbNamePosition(); scheduleDraw();
+    });
+  });
+
+  buildColorStrip();
+  loadFromLocalStorage();
+  loadAllThumbnails();
+  updateFilterCounts();
+  renumberVisibleCards();
+  clampFbNamePosition();
+  scheduleDraw();
+  if (userCards.length > 0) saveUserCards();
+  updateUndoBtn();
+
+  document.addEventListener('deviceready', function() { console.log('✅ Cordova ready'); ensureAndroidPermissions(); }, false);
+  window.addEventListener('beforeunload', () => { saveSettings(); saveUserCards(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveSettings(); saveUserCards(); } });
+  window.addEventListener('pagehide', () => { saveSettings(); saveUserCards(); });
+</script>
+
+</body>
+</html>
